@@ -4,7 +4,7 @@
  */
 {
 	"global": { // Settings for the entire game (Entities and component settings are generally found in their respective files.)
-	    "autoLoad": true,                        // Optional. Whether to immediately begin the game once the page is finished loading. Default is `true`.
+	    "autoLoad": false,                       // Optional. Whether to immediately begin the game once the page is finished loading. Default is `true`.
 		"initialScene": "load",                  // Required. Once the game is ready, this scene is automatically loaded.
 		"fps": 60,                               // Optional. Target FPS to be used by the game engine. Default is 60 FPS.
 		"rootElement": "root",                   // Optional. Defines the id of the root DOM element used by the game. The default is "root" and this element is created if it does not already exist.
@@ -14,24 +14,13 @@
 	},
 	"builds": [                                  // Builds and their respective settings
 		{
-			"id": "production",                  // This is the id of the build and is matched to a folder name in the "builds/" folder. Build tools create this folder if needed.
-			"namespace": "PBS.KIDS.platformer",  // Optional namespace for the game - defaults to "PBS.KIDS.platformer"
-            "index": true,                       // Optional. If false, page is saved as the id + '.html' and resources are saved to a separate subfolder matching the id. Defaults to true, wherein the index and resources are in a single folder.
+			"id": "play",                        // This is the id of the build and is matched to a folder name in the "builds/" folder. Build tools create this folder if needed.
+			"namespace": "platypus",             // Optional namespace for the game - defaults to "PBS.KIDS.platformer"
+            "index": false,                      // Optional. If false, page is saved as the id + '.html' and resources are saved to a separate subfolder matching the id. Defaults to true, wherein the index and resources are in a single folder.
 			"cssCompression": true,
 			"jsCompression": true,
 			"manifest": true,                    // Determines whether this build uses Application Cache.
-			"pngCompression": 256,               // Whether to compress PNGs: 0 = No, # > 0 compresses to # of colors per image.
-			"paths": {
-				//"default": "",                 // If a path is specified here, all files use this absolute path; otherwise files default to relative path names.
-				//"assets":  ""                  // The list of assets can have an alternative absolute path (for example, when using a CDN). If not defined, assets use the default path above.
-			}
-		},{
-			"id": "debug",          // This is the id of the build and is matched to a folder name in the "builds/" folder. Build tools create this folder if needed.
-			"cssCompression": false,
-			"jsCompression": false,
-			"manifest": false,      // Determines whether this build uses Application Cache.
-			"pngCompression": 256,  // Whether to compress PNGs: 0 = No, # > 0 compresses to # of colors per image.
-			"debug": true           // Whether to show debug components and entities.
+			"pngCompression": 256                // Whether to compress PNGs: 0 = No, # > 0 compresses to # of colors per image.
 		}
 	],
 	"source": { 

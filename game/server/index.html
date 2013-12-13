@@ -1,0 +1,1667 @@
+<!DOCTYPE HTML>
+<html> 
+ <head>
+  <title>Example Game</title>
+  <meta name="keywords" http-equiv="keywords" content="Platypus is your friend." />
+  <meta name="description" content="Platypus is your friend. He's friendly like that." />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" type="text/css" href="jsoneditor-min.css">
+  <style>
+body {
+margin: 0;
+padding: 0;
+}
+  
+#run {
+position: absolute;
+right: 0;
+height: 24px;
+line-height: 24px;
+margin: 5px;
+padding: 0;
+border-radius: 2px;
+border: 1px solid #aec0f8;
+background: #e3eaf6;
+color: #4D4D4D;
+opacity: .8;
+float: left;
+font-family: arial,sans-serif;
+font-size: 10pt;
+width: 90px;
+text-align: center;
+cursor: pointer;
+}
+#run:active, #run:hover {
+background-color: #f0f2f5;
+}
+
+.jsoneditor .search {
+position: inherit;
+}
+
+.jsoneditor-contextmenu {
+bottom: inherit !important;
+top: 5px;
+}
+  </style>
+ </head>
+ <body>
+  <div id="jsoneditor" style="top: 0; bottom: 0;position: absolute;left: 0;right: 0;"></div>
+  <div id='run'>Create Game</div>
+
+  <!-- scripts -->
+  <script type="text/javascript" src="jsoneditor-min.js"></script>
+  <script>
+  window.addEventListener('load', function(e){
+	  var container = document.getElementById("jsoneditor"),
+	  editor = null;
+	  
+	  jsoneditor.JSONEditor.modes.tree.editor.prototype.__onEvent = jsoneditor.JSONEditor.modes.tree.editor.prototype._onEvent;
+      jsoneditor.JSONEditor.modes.tree.editor.prototype._onEvent = function(e){
+          var target = e.target,
+          entry = '';
+          
+          this.__onEvent(e);
+          
+          if(e.type === 'focus'){
+              while (!target.node){
+                  target = target.parentElement;
+                  if(!target){
+                      return;
+                  }
+              }
+              console.log(target.node);
+          }
+      }
+
+	  editor = window.jsonEditor = new jsoneditor.JSONEditor(container, {
+		  modes: ['tree', 'text']
+	  }, {
+          "global": {
+              "autoLoad": false,
+              "initialScene": "load",
+              "fps": 60,
+              "rootElement": "root",
+              "aspectRatio": 1.333,
+              "nativeAssetResolution": 960,
+              "resizeFont": true
+          },
+          "assets": {
+              "walk": {
+                  "id": "walk",
+                  "src": {
+                      "ogg": "play/a/walk.ogg",
+                      "mp3": "play/a/walk.mp3",
+                      "m4aCombined": {
+                          "assetId": "combined",
+                          "src": "play/a/combined.m4a",
+                          "data": {
+                              "offset": 3200,
+                              "length": 330
+                          }
+                      }
+                  }
+              },
+              "jump": {
+                  "id": "jump",
+                  "src": {
+                      "ogg": "play/a/jump.ogg",
+                      "mp3": "play/a/jump.mp3",
+                      "m4aCombined": {
+                          "assetId": "combined",
+                          "src": "play/a/combined.m4a",
+                          "data": {
+                              "offset": 1500,
+                              "length": 250
+                          }
+                      }
+                  }
+              },
+              "buttons": {
+                  "id": "buttons",
+                  "src": "play/i/buttons.png"
+              },
+              "mookie": {
+                  "id": "mookie",
+                  "src": "play/i/mookie.png",
+                  "data": {
+                      "rows": 4,
+                      "columns": 4
+                  }
+              },
+              "sprites": {
+                  "id": "sprites",
+                  "src": "play/i/game-sprites.png",
+                  "data": {
+                      "rows": 4,
+                      "columns": 4
+                  }
+              },
+              "tiles": {
+                  "id": "tiles",
+                  "src": "play/i/tiles.png",
+                  "data": {
+                      "rows": 3,
+                      "columns": 4
+                  }
+              },
+              "title-screen": {
+                  "id": "title-screen",
+                  "src": "play/i/title-screen.png"
+              },
+              "objects": {
+                  "id": "objects",
+                  "src": "play/i/objects.png",
+                  "data": {
+                      "rows": 1,
+                      "columns": 4
+                  }
+              }
+          },
+          "entities": {
+              "action-layer": {
+                  "id": "action-layer",
+                  "components": [
+                      {
+                          "type": "handler-controller"
+                      },
+                      {
+                          "type": "handler-ai"
+                      },
+                      {
+                          "type": "handler-logic"
+                      },
+                      {
+                          "type": "handler-collision"
+                      },
+                      {
+                          "type": "camera",
+                          "width": 3200
+                      },
+                      {
+                          "type": "handler-render-createjs"
+                      },
+                      {
+                          "type": "entity-container"
+                      },
+                      {
+                          "type": "tiled-loader",
+                          "unitsPerPixel": 10,
+                          "images": [
+                              "sprites"
+                          ],
+                          "imagesScale": 3.3333333333
+                      }
+                  ]
+              },
+              "desktop-interface-layer": {
+                  "id": "desktop-interface-layer",
+                  "filter": {
+                      "excludes": [
+                          "mobile"
+                      ]
+                  },
+                  "components": [
+                      {
+                          "type": "handler-logic"
+                      },
+                      {
+                          "type": "handler-render-dom"
+                      },
+                      {
+                          "type": "entity-container",
+                          "entities": [
+                              {
+                                  "type": "button-mute"
+                              },
+                              {
+                                  "type": "button-fullscreen"
+                              },
+                              {
+                                  "type": "button-play"
+                              },
+                              {
+                                  "type": "gui"
+                              },
+                              {
+                                  "type": "fps-counter"
+                              }
+                          ],
+                          "childEvents": [
+                              "time-elapsed"
+                          ]
+                      }
+                  ]
+              },
+              "multitouch-interface-layer": {
+                  "id": "multitouch-interface-layer",
+                  "filter": {
+                      "includes": [
+                          "mobile",
+                          "multitouch"
+                      ]
+                  },
+                  "components": [
+                      {
+                          "type": "handler-logic"
+                      },
+                      {
+                          "type": "handler-render-dom"
+                      },
+                      {
+                          "type": "entity-container",
+                          "entities": [
+                              {
+                                  "type": "button-fullscreen"
+                              },
+                              {
+                                  "type": "button-jump"
+                              },
+                              {
+                                  "type": "button-pickaxe"
+                              },
+                              {
+                                  "type": "button-left"
+                              },
+                              {
+                                  "type": "button-right"
+                              },
+                              {
+                                  "type": "gui"
+                              },
+                              {
+                                  "type": "fps-counter"
+                              }
+                          ],
+                          "childEvents": [
+                              "gui-gem-collected",
+                              "time-elapsed"
+                          ]
+                      }
+                  ]
+              },
+              "touch-interface-layer": {
+                  "id": "touch-interface-layer",
+                  "filter": {
+                      "includes": [
+                          "mobile",
+                          "touch"
+                      ],
+                      "excludes": [
+                          "multitouch"
+                      ]
+                  },
+                  "components": [
+                      {
+                          "type": "handler-logic"
+                      },
+                      {
+                          "type": "handler-render-dom"
+                      },
+                      {
+                          "type": "entity-container",
+                          "entities": [
+                              {
+                                  "type": "button-fullscreen"
+                              },
+                              {
+                                  "type": "button-jump-left"
+                              },
+                              {
+                                  "type": "button-jump-right"
+                              },
+                              {
+                                  "type": "button-jump",
+                                  "properties": {
+                                      "className": "game-button jump-center-button"
+                                  }
+                              },
+                              {
+                                  "type": "button-left"
+                              },
+                              {
+                                  "type": "button-right"
+                              },
+                              {
+                                  "type": "gui"
+                              },
+                              {
+                                  "type": "fps-counter"
+                              }
+                          ],
+                          "childEvents": [
+                              "time-elapsed"
+                          ]
+                      }
+                  ]
+              },
+              "tile-layer": {
+                  "id": "tile-layer",
+                  "components": [
+                      {
+                          "type": "render-tiles",
+                          "spriteSheet": "import",
+                          "imageMap": "import"
+                      },
+                      {
+                          "type": "collision-tiles",
+                          "collisionMap": "import"
+                      }
+                  ]
+              },
+              "render-layer": {
+                  "id": "render-layer",
+                  "components": [
+                      {
+                          "type": "render-tiles",
+                          "spriteSheet": "import",
+                          "imageMap": "import"
+                      }
+                  ]
+              },
+              "collision-layer": {
+                  "id": "collision-layer",
+                  "components": [
+                      {
+                          "type": "collision-tiles",
+                          "collisionMap": "import"
+                      }
+                  ]
+              },
+              "button-fullscreen": {
+                  "id": "button-fullscreen",
+                  "components": [
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "className": "button-fullscreen",
+                          "onmouseup": "toggle-fullscreen",
+                          "ontouchend": "toggle-fullscreen"
+                      },
+                      {
+                          "type": "fullscreen"
+                      }
+                  ]
+              },
+              "button-jump": {
+                  "id": "button-jump",
+                  "components": [
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "className": "game-button jump-button",
+                          "onmousedown": "start-jump",
+                          "ontouchstart": "start-jump",
+                          "onmouseup": "stop-jump",
+                          "ontouchend": "stop-jump",
+                          "ontouchcancel": "stop-jump"
+                      },
+                      {
+                          "type": "broadcast-events",
+                          "events": {
+                              "start-jump": "button-jump:down",
+                              "stop-jump": "button-jump:up"
+                          }
+                      }
+                  ]
+              },
+              "button-jump-left": {
+                  "id": "button-jump-left",
+                  "components": [
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "className": "game-button jump-left-button",
+                          "onmousedown": "start-jump",
+                          "ontouchstart": "start-jump",
+                          "onmouseup": "stop-jump",
+                          "ontouchend": "stop-jump",
+                          "ontouchcancel": "stop-jump"
+                      },
+                      {
+                          "type": "broadcast-events",
+                          "events": {
+                              "start-jump": [
+                                  "button-jump:down",
+                                  "button-left:down"
+                              ],
+                              "stop-jump": [
+                                  "button-jump:up",
+                                  "button-left:up"
+                              ]
+                          }
+                      }
+                  ]
+              },
+              "button-jump-right": {
+                  "id": "button-jump-right",
+                  "components": [
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "className": "game-button jump-right-button",
+                          "onmousedown": "start-jump",
+                          "ontouchstart": "start-jump",
+                          "onmouseup": "stop-jump",
+                          "ontouchend": "stop-jump",
+                          "ontouchcancel": "stop-jump"
+                      },
+                      {
+                          "type": "broadcast-events",
+                          "events": {
+                              "start-jump": [
+                                  "button-jump:down",
+                                  "button-right:down"
+                              ],
+                              "stop-jump": [
+                                  "button-jump:up",
+                                  "button-right:up"
+                              ]
+                          }
+                      }
+                  ]
+              },
+              "button-left": {
+                  "id": "button-left",
+                  "components": [
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "className": "game-button go-left-button",
+                          "onmousedown": "start-move",
+                          "ontouchstart": "start-move",
+                          "onmouseup": "stop-move",
+                          "ontouchend": "stop-move",
+                          "ontouchcancel": "stop-move"
+                      },
+                      {
+                          "type": "broadcast-events",
+                          "events": {
+                              "start-move": "button-left:down",
+                              "stop-move": "button-left:up"
+                          }
+                      }
+                  ]
+              },
+              "button-play-game": {
+                  "id": "button-play-game",
+                  "components": [
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "innerHTML": "Play Game",
+                          "className": "menu-button",
+                          "onmouseup": "new-scene",
+                          "ontouchend": "new-scene"
+                      },
+                      {
+                          "type": "change-scene",
+                          "scene": "scene-level-1",
+                          "transition": "fade-to-black"
+                      }
+                  ]
+              },
+              "button-right": {
+                  "id": "button-right",
+                  "components": [
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "className": "game-button go-right-button",
+                          "onmousedown": "start-move",
+                          "ontouchstart": "start-move",
+                          "onmouseup": "stop-move",
+                          "ontouchend": "stop-move",
+                          "ontouchcancel": "stop-move"
+                      },
+                      {
+                          "type": "broadcast-events",
+                          "events": {
+                              "start-move": "button-right:down",
+                              "stop-move": "button-right:up"
+                          }
+                      }
+                  ]
+              },
+              "button-mute": {
+                  "id": "button-mute",
+                  "components": [
+                      {
+                          "type": "logic-button",
+                          "toggle": true,
+                          "state": "pressed"
+                      },
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "className": "game-button mute-button",
+                          "updateClassName": true,
+                          "onmouseup": [
+                              "audio-mute-toggle",
+                              "mouseup"
+                          ],
+                          "ontouchend": [
+                              "audio-mute-toggle",
+                              "mouseup"
+                          ]
+                      },
+                      {
+                          "type": "audio"
+                      }
+                  ],
+                  "properties": {
+                      "x": 10,
+                      "y": 10,
+                      "z": 400,
+                      "width": 400,
+                      "height": 400
+                  }
+              },
+              "hero": {
+                  "id": "hero",
+                  "components": [
+                      {
+                          "type": "entity-controller",
+                          "controlMap": {
+                              "button-jump": "jump",
+                              "key:z": "jump",
+                              "key:space": "jump",
+                              "key:up-arrow": "jump",
+                              "key:w": "jump",
+                              "key:left-arrow": "go-left",
+                              "key:a": "go-left",
+                              "button-left": "go-left",
+                              "key:right-arrow": "go-right",
+                              "key:d": "go-right",
+                              "button-right": "go-right"
+                          }
+                      },
+                      {
+                          "type": "logic-gravity"
+                      },
+                      {
+                          "type": "logic-jump"
+                      },
+                      {
+                          "type": "logic-hero"
+                      },
+                      {
+                          "type": "logic-directional-movement",
+                          "speed": 2
+                      },
+                      {
+                          "type": "collision-basic",
+                          "collisionType": "hero",
+                          "solidCollisions": {
+                              "block": "hit-solid",
+                              "dirt": "hit-solid",
+                              "tiles": "hit-solid"
+                          }
+                      },
+                      {
+                          "type": "render-animation",
+                          "mirror": "true",
+                          "animationMap": {
+                              "falling": "jumping",
+                              "moving": "walking",
+                              "default": "standing"
+                          },
+                          "spriteSheet": {
+                              "framerate": 15,
+                              "images": [
+                                  "mookie"
+                              ],
+                              "frames": {
+                                  "width": 65,
+                                  "height": 83,
+                                  "regY": 82,
+                                  "regX": 33
+                              },
+                              "animations": {
+                                  "standing": [
+                                      2
+                                  ],
+                                  "walking": {
+                                      "frames": [
+                                          3,
+                                          0,
+                                          1,
+                                          2
+                                      ]
+                                  },
+                                  "jumping": {
+                                      "frames": [
+                                          0
+                                      ]
+                                  }
+                              }
+                          }
+                      },
+                      {
+                          "type": "audio",
+                          "audioMap": {
+                              "ground, moving": {
+                                  "sound": "walk",
+                                  "loop": 5000
+                              },
+                              "just-jumped": "jump"
+                          }
+                      }
+                  ],
+                  "properties": {
+                      "alwaysOn": true,
+                      "z": 200,
+                      "width": 80,
+                      "height": 240,
+                      "camera": "forward"
+                  }
+              },
+              "block": {
+                  "id": "block",
+                  "components": [
+                      {
+                          "type": "logic-gravity"
+                      },
+                      {
+                          "type": "logic-pushable"
+                      },
+                      {
+                          "type": "collision-basic",
+                          "collisionType": "block",
+                          "solidCollisions": {
+                              "block": "hit-solid",
+                              "dirt": "hit-solid",
+                              "hero": [
+                                  "push-entity",
+                                  "hit-solid"
+                              ],
+                              "tiles": "hit-solid",
+                              "beetle": "hit-solid",
+                              "briar": "hit-solid"
+                          }
+                      },
+                      {
+                          "type": "render-image",
+                          "image": "sprites",
+                          "source": {
+                              "width": 72,
+                              "height": 72,
+                              "y": 432,
+                              "x": 144
+                          },
+                          "regX": 36,
+                          "regY": 72
+                      }
+                  ],
+                  "properties": {
+                      "z": 50,
+                      "width": 220,
+                      "height": 240
+                  }
+              },
+              "progress-bar": {
+                  "id": "progress-bar",
+                  "components": [
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "className": "progress-bar",
+                          "innerHTML": "Loading..."
+                      },
+                      {
+                          "type": "entity-container",
+                          "entities": [
+                              {
+                                  "id": "container",
+                                  "components": [
+                                      {
+                                          "type": "change-scene",
+                                          "scene": "menu",
+                                          "message": "complete"
+                                      },
+                                      {
+                                          "type": "asset-loader",
+                                          "useXHR": false
+                                      }
+                                  ]
+                              }
+                          ]
+                      }
+                  ]
+              },
+              "level-portal": {
+                  "id": "level-portal",
+                  "components": [
+                      {
+                          "type": "logic-portal"
+                      },
+                      {
+                          "type": "collision-basic",
+                          "collisionType": "portal",
+                          "immobile": true,
+                          "softCollisions": {
+                              "hero": "occupied-portal"
+                          }
+                      },
+                      {
+                          "type": "change-scene",
+                          "transition": "fade-to-black"
+                      }
+                  ],
+                  "properties": {
+                      "z": 0
+                  }
+              },
+              "title-screen": {
+                  "id": "title-screen",
+                  "components": [
+                      {
+                          "type": "dom-element",
+                          "element": "div",
+                          "className": "title-screen"
+                      }
+                  ]
+              },
+              "gui": {
+                  "id": "gui",
+                  "components": [
+                      {
+                          "type": "logic-gui"
+                      },
+                      {
+                          "type": "entity-container",
+                          "entities": [
+                              {}
+                          ],
+                          "childEvents": [
+                              "handle-logic",
+                              "handle-render",
+                              "handle-render-load"
+                          ]
+                      }
+                  ]
+              },
+              "fps-counter": {
+                  "id": "fps-counter",
+                  "components": [
+                      {
+                          "type": "logic-fps-counter"
+                      },
+                      {
+                          "type": "dom-element",
+                          "className": "fps-counter",
+                          "style": {
+                              "position": "absolute",
+                              "left": "0.5em",
+                              "top": "0.5em",
+                              "color": "white",
+                              "fontSize": "2em",
+                              "fontWeight": "bold",
+                              "fontFamily": "Arial",
+                              "pointerEvents": "none",
+                              "zIndex": 11
+                          }
+                      }
+                  ]
+              },
+              "ball": {
+                  "id": "ball",
+                  "components": [
+                      {
+                          "type": "logic-gravity"
+                      },
+                      {
+                          "type": "collision-basic",
+                          "collisionType": "ball",
+                          "solidCollisions": {
+                              "ball": "hit-solid",
+                              "hero": "hit-solid",
+                              "tiles": "hit-solid"
+                          },
+                          "shapeType": "circle"
+                      },
+                      {
+                          "type": "render-debug"
+                      }
+                  ],
+                  "properties": {
+                      "z": 50,
+                      "width": 240,
+                      "height": 240
+                  }
+              }
+          },
+          "scenes": {
+              "load": {
+                  "layers": [
+                      {
+                          "id": "load-layer",
+                          "components": [
+                              {
+                                  "type": "handler-logic"
+                              },
+                              {
+                                  "type": "handler-render-dom"
+                              },
+                              {
+                                  "type": "entity-container",
+                                  "entities": [
+                                      {
+                                          "type": "title-screen"
+                                      },
+                                      {
+                                          "type": "progress-bar"
+                                      }
+                                  ],
+                                  "childEvents": [
+                                      "link-entity"
+                                  ]
+                              }
+                          ]
+                      }
+                  ],
+                  "id": "load"
+              },
+              "menu": {
+                  "layers": [
+                      {
+                          "id": "menu-layer",
+                          "components": [
+                              {
+                                  "type": "handler-logic"
+                              },
+                              {
+                                  "type": "handler-render-dom"
+                              },
+                              {
+                                  "type": "handler-controller"
+                              },
+                              {
+                                  "type": "entity-container",
+                                  "entities": [
+                                      {
+                                          "type": "title-screen"
+                                      },
+                                      {
+                                          "type": "button-play-game"
+                                      }
+                                  ]
+                              }
+                          ]
+                      },
+                      {
+                          "id": "enable-ios-audio-layer",
+                          "filter": {
+                              "includes": [
+                                  "iOS"
+                              ]
+                          },
+                          "components": [
+                              {
+                                  "type": "enable-ios-audio",
+                                  "audioId": "combined"
+                              }
+                          ]
+                      }
+                  ],
+                  "id": "menu"
+              },
+              "scene-level-1": {
+                  "layers": [
+                      {
+                          "type": "action-layer",
+                          "properties": {
+                              "level": "level-1"
+                          }
+                      },
+                      {
+                          "type": "multitouch-interface-layer"
+                      },
+                      {
+                          "type": "touch-interface-layer"
+                      },
+                      {
+                          "type": "desktop-interface-layer"
+                      }
+                  ],
+                  "id": "scene-level-1"
+              }
+          },
+          "levels": {
+              "level-1": {
+                  "height": 10,
+                  "layers": [
+                      {
+                          "data": [
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              5,
+                              6,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              9,
+                              10,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1,
+                              1
+                          ],
+                          "height": 10,
+                          "name": "background",
+                          "opacity": 1,
+                          "type": "tilelayer",
+                          "visible": true,
+                          "width": 30,
+                          "x": 0,
+                          "y": 0
+                      },
+                      {
+                          "data": [
+                              1,
+                              1,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              1,
+                              1,
+                              1,
+                              1,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              1,
+                              1,
+                              1,
+                              1,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              1,
+                              1,
+                              1,
+                              1,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              1,
+                              1,
+                              1,
+                              1,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              2,
+                              3,
+                              4,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              1,
+                              1,
+                              1,
+                              1,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              2,
+                              3,
+                              4,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              2,
+                              3,
+                              4,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              1,
+                              1,
+                              1,
+                              1,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              1,
+                              1,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              3,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7,
+                              7
+                          ],
+                          "height": 10,
+                          "name": "action",
+                          "opacity": 1,
+                          "properties": {
+                              "entity": "tile-layer"
+                          },
+                          "type": "tilelayer",
+                          "visible": true,
+                          "width": 30,
+                          "x": 0,
+                          "y": 0
+                      },
+                      {
+                          "height": 10,
+                          "name": "entities",
+                          "objects": [
+                              {
+                                  "height": 48,
+                                  "name": "",
+                                  "properties": {
+                                      "destination": "menu"
+                                  },
+                                  "type": "level-portal",
+                                  "width": 48,
+                                  "x": 624,
+                                  "y": 120
+                              },
+                              {
+                                  "gid": 13,
+                                  "height": 0,
+                                  "name": "",
+                                  "properties": {},
+                                  "type": "hero",
+                                  "width": 0,
+                                  "x": 72,
+                                  "y": 144
+                              },
+                              {
+                                  "gid": 15,
+                                  "height": 0,
+                                  "name": "",
+                                  "properties": {},
+                                  "type": "",
+                                  "width": 0,
+                                  "x": 0,
+                                  "y": 24
+                              }
+                          ],
+                          "opacity": 1,
+                          "type": "objectgroup",
+                          "visible": true,
+                          "width": 30,
+                          "x": 0,
+                          "y": 0
+                      }
+                  ],
+                  "orientation": "orthogonal",
+                  "properties": {},
+                  "tileheight": 24,
+                  "tilesets": [
+                      {
+                          "firstgid": 1,
+                          "image": "/images/tiles.png",
+                          "imageheight": 72,
+                          "imagewidth": 96,
+                          "margin": 0,
+                          "name": "tiles",
+                          "properties": {},
+                          "spacing": 0,
+                          "tileheight": 24,
+                          "tilewidth": 24
+                      },
+                      {
+                          "firstgid": 13,
+                          "image": "/images/objects.png",
+                          "imageheight": 24,
+                          "imagewidth": 96,
+                          "margin": 0,
+                          "name": "objects",
+                          "properties": {},
+                          "spacing": 0,
+                          "tileheight": 24,
+                          "tileproperties": {
+                              "0": {
+                                  "entity": "hero"
+                              },
+                              "1": {
+                                  "entity": "timer"
+                              },
+                              "2": {
+                                  "entity": "timer"
+                              }
+                          },
+                          "tilewidth": 24
+                      }
+                  ],
+                  "tilewidth": 24,
+                  "version": 1,
+                  "width": 30,
+                  "id": "level-1"
+              }
+          },
+          "debug": true
+      });
+
+	  window.childReady = function(callback){
+		  //sending JSON as string and converting back on other side so obj and array instances are created from the other window's prototypal chain.
+          callback(JSON.stringify(editor.get()));
+      }
+      
+	  document.getElementById('run').addEventListener('click', function(e){
+          var child = window.open('play.html');
+          child.focus();
+      }, false);
+  }, false);
+  </script>
+ </body>
+</html>

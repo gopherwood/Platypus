@@ -10,5 +10,17 @@
  <body>
   <!-- scripts -->
   <script type="text/javascript" src="default.js"></script>
+  <script>
+  window.addEventListener('load', function(e){
+	  window.opener.childReady(function(gameJSON){
+//	      var run = document.createElement('div');
+//	      run.innerHTML = 'Play!';
+//	      run.addEventListener('click', function(e){
+	          new platypus.classes.game(JSON.parse(gameJSON));
+//	      }, false);
+//	      document.body.appendChild(run);
+	  });
+  }, false);
+  </script>
  </body>
 </html>
