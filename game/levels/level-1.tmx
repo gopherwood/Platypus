@@ -1,46 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" width="30" height="10" tilewidth="24" tileheight="24">
- <tileset firstgid="1" name="tiles" tilewidth="24" tileheight="24">
-  <image source="../images/tiles.png" width="96" height="72"/>
- </tileset>
- <tileset firstgid="13" name="objects" tilewidth="24" tileheight="24">
-  <image source="../images/objects.png" width="96" height="24"/>
-  <tile id="0">
-   <properties>
-    <property name="entity" value="hero"/>
-   </properties>
-  </tile>
-  <tile id="1">
-   <properties>
-    <property name="entity" value="timer"/>
-   </properties>
-  </tile>
-  <tile id="2">
-   <properties>
-    <property name="entity" value="timer"/>
-   </properties>
-  </tile>
- </tileset>
- <layer name="background" width="30" height="10">
-  <data encoding="base64" compression="gzip">
-   H4sIAAAAAAAAA2NkYGBgHMWjeIhiViBmGwB7OYGYaxD4f6RhAFjZAvuwBAAA
+<map version="1.0" orientation="orthogonal" width="22" height="16" tilewidth="30" tileheight="30">
+ <tileset firstgid="1" source="entities.tsx"/>
+ <tileset firstgid="5" source="tiles.tsx"/>
+ <layer name="background" width="22" height="16">
+  <data encoding="base64" compression="zlib">
+   eJxjZWBg4ABiNiBmh2JWJMyBJM4O5bNC2WxI+jiQ5JD1jpo7au6ouaPmjpqL3VwAfugI4Q==
   </data>
  </layer>
- <layer name="action" width="30" height="10">
-  <properties>
-   <property name="entity" value="tile-layer"/>
-  </properties>
-  <data encoding="base64" compression="gzip">
-   H4sIAAAAAAAAA2NkYGBgZKAfYETDo/YOTnuZgJgZiFlobC8he4h1x0CHM/MAYfYRhgGwN33ksAQAAA==
-  </data>
- </layer>
- <objectgroup name="entities" width="30" height="10">
-  <object type="level-portal" x="624" y="120" width="48" height="48">
-   <properties>
-    <property name="destination" value="menu"/>
-   </properties>
-  </object>
-  <object type="hero" gid="13" x="72" y="144"/>
-  <object gid="15" x="0" y="24"/>
+ <objectgroup name="entities" width="22" height="16">
+  <object gid="2" x="133" y="183"/>
+  <object gid="2" x="224" y="213"/>
+  <object gid="2" x="258" y="289"/>
+  <object gid="2" x="225" y="371"/>
+  <object gid="2" x="336" y="181"/>
+  <object gid="3" x="390" y="300"/>
+  <object gid="3" x="466" y="245"/>
+  <object gid="3" x="45" y="302"/>
+  <object gid="3" x="114" y="391"/>
+  <object gid="3" x="175" y="467"/>
+  <object gid="3" x="305" y="449"/>
+  <object gid="1" x="60" y="60"/>
+  <object gid="1" x="150" y="90"/>
+  <object gid="1" x="240" y="90"/>
+  <object gid="1" x="222" y="34"/>
+  <object gid="1" x="334" y="61"/>
+  <object gid="1" x="447" y="60"/>
  </objectgroup>
 </map>

@@ -1,0 +1,25 @@
+CACHE MANIFEST
+# Version 139085875
+
+CACHE:
+
+# ogg:
+
+a/walk.ogg
+a/jump.ogg
+j/compressed139085875.js
+s/compressed139085875.css
+
+i/buttons.png
+i/mookie.png
+i/game-sprites.png
+i/tiles.png
+i/title-screen.png
+i/objects.png
+i/entities.png
+http://code.createjs.com/createjs-2013.09.25.min.js
+
+FALLBACK:
+
+NETWORK:
+*

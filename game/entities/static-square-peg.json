@@ -1,0 +1,36 @@
+{
+	"id": "static-square-peg",
+	"components":[
+		{
+            "type": "collision-box2d",
+            "body": {
+            	"type": "static",
+            	"fixtureDefinition": {
+            		"density": 		1,
+            		"friction": 	0.5,
+            		"restitution": 	0.2
+            	},
+            	"shapes": [
+            		{
+            			"halfWidth": 15,
+            			"halfHeight": 15
+            		}
+            	]
+            }
+        },{
+      		"type": "render-image",
+      		"image": "entities",
+      		"source": {
+      			"width": 30,
+      			"height": 30,
+      			"y": 30,
+      			"x": 0
+      		},
+      		"regX": 15,
+      		"regY": 15,
+      		"rotate": true
+      	}
+	],
+	"properties":{
+	}
+}

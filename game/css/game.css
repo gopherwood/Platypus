@@ -39,6 +39,10 @@
     height: 77%;
 }
 
+#box2D-debug-canvas {
+	z-index: 1;	
+}
+	
 /* This is the opening screen div used by the handler-render-dom component */
 .title-screen {
 	position: absolute;

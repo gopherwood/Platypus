@@ -45,12 +45,14 @@
 		    {"id": "buttons",    	 "src": "images/buttons.png"},
 			{"id": "mookie",         "src": "images/mookie.png",       "data": {"rows": 4, "columns": 4}},
             {"id": "sprites",        "src": "images/game-sprites.png", "data": {"rows": 4, "columns": 4}},
-            {"id": "tiles",          "src": "images/tiles.png",        "data": {"rows": 3, "columns": 4}},
+            {"id": "tiles",          "src": "images/tiles.png",        "data": {"rows": 2, "columns": 2}},
             {"id": "title-screen",   "src": "images/title-screen.png"},
-            {"id": "objects",        "src": "images/objects.png",      "data": {"rows": 1, "columns": 4}}
+            {"id": "objects",        "src": "images/objects.png",      "data": {"rows": 1, "columns": 4}},
+            {"id": "entities",       "src": "images/entities.png",     "data": {"rows": 2, "columns": 2}}
 		],
         "includes": [
             {"id": "CreateJS",      "src": "http://code.createjs.com/createjs-2013.09.25.min.js"},
+            {"id": "Box2d",      	"src": "Box2dWeb-2.1.a.3.min.js"},
             {"id": "Browser",       "src": "../engine/browser.js"},
             {"id": "Main",          "src": "../engine/main.js"},
             {"id": "ButtonCSS",     "src": "css/button.css"},
@@ -74,6 +76,7 @@
             {"id": "asset-loader",               "src": "../engine/components/asset-loader.js"},
             {"id": "enable-ios-audio",           "src": "../engine/components/enable-ios-audio.js"},
             {"id": "handler-collision",          "src": "../engine/components/handler-collision.js"},
+            {"id": "handler-box2d",          	 "src": "../engine/components/handler-box2d.js"},
 			{"id": "handler-controller",         "src": "../engine/components/handler-controller.js"},
 			{"id": "tiled-loader",               "src": "../engine/components/tiled-loader.js"},
             {"id": "handler-render-createjs",    "src": "../engine/components/handler-render-createjs.js"},
@@ -102,6 +105,7 @@
             {"id": "logic-portal",	             "src": "../engine/components/logic-portal.js"},
 			{"id": "collision-basic",            "src": "../engine/components/collision-basic.js"},
 			{"id": "collision-tiles",            "src": "../engine/components/collision-tiles.js"},
+			{"id": "collision-box2d",            "src": "../engine/components/collision-box2d.js"},
             {"id": "logic-fps-counter",          "src": "../engine/components/logic-fps-counter.js"},
 			
 			// These are components that were designed specifically for this game. If you want to design your own components, copy the template in game/components/ec-template.js to get started!
@@ -134,7 +138,10 @@
             {"id": "title-screen",    "src": "entities/title-screen.json"},
             {"id": "gui",    		  "src": "entities/gui.json"},
             {"id": "fps-counter",	  "src": "entities/fps-counter.json"},
-            {"id": "ball",	  		  "src": "entities/ball.json"}
+            {"id": "ball",	  		  "src": "entities/ball.json"},
+            {"id": "fancy-box",	  	  "src": "entities/fancy-box.json"},
+            {"id": "static-square-peg",	  	  "src": "entities/static-square-peg.json"},
+            {"id": "static-round-peg",	  	  "src": "entities/static-round-peg.json"}
 		],
 		"scenes": [ // JSON files describing scenes
             {"id": "load",        "src": "scenes/load.json"}, // If "src" key is included, this will be replaced by the JSON structure in the linked file.
