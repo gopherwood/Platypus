@@ -71,7 +71,8 @@ The Entity object acts as a container for components, facilitates communication 
     }
 */
 platformer.classes.entity = (function(){
-	var entity = function (definition, instanceDefinition){
+	var entityIds = {},
+	entity = function (definition, instanceDefinition){
 		var self             = this,
 		index                = undefined,
 		componentDefinition  = undefined,
@@ -85,7 +86,16 @@ platformer.classes.entity = (function(){
 		self.messages    = [];
 		self.loopCheck   = [];
 		self.unbindLater = [];
-		self.type = def.id;
+		self.type = def.id || 'none';
+		
+		self.id = instanceDefinition.id;
+		if(!self.id){
+			if(!entityIds[self.type]){
+				entityIds[self.type] = 0;
+			}
+			self.id = self.type + '-' + entityIds[self.type];
+			entityIds[self.type] += 1;
+		}
 
 		this.setProperty(defaultProperties); // This takes the list of properties in the JSON definition and appends them directly to the object.
 		this.setProperty(instanceProperties); // This takes the list of options for this particular instance and appends them directly to the object.
@@ -121,13 +131,27 @@ platformer.classes.entity = (function(){
 	};
 	
 	proto.removeComponent = function(component){
-	    for (var index in this.components){
-		    if(this.components[index] === component){
-		    	this.components.splice(index, 1);
-		    	component.destroy();
-			    return component;
+		var index = '';
+		
+		if(typeof component === 'string'){
+		    for (index in this.components){
+			    if(this.components[index].type === component){
+			    	component = this.components[index];
+			    	this.components.splice(index, 1);
+			    	component.destroy();
+				    return component;
+			    }
 		    }
-	    }
+		} else {
+		    for (index in this.components){
+			    if(this.components[index] === component){
+			    	this.components.splice(index, 1);
+			    	component.destroy();
+				    return component;
+			    }
+		    }
+		}
+		
 	    return false;
 	};
 	
