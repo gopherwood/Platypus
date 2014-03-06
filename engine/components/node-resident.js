@@ -40,7 +40,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
       "nodeId": "city-hall",
       // Optional. The id of the node that this entity should start on. Uses the entity's nodeId property if not set here.
       
-      "nodes": ['path','sidewalk','road'],
+      "nodes": {"path": "walking", "sidewalk": "walking", "road": "driving"],
       // Optional. This is a list of node types that this entity can reside on. If not set, entity can reside on any type of node.
       
       "shares": ['friends','neighbors','city-council-members'],
@@ -54,9 +54,27 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
     }
 */
 (function(){
-	var createGateway = function(node, map, gateway){
+	var createGateway = function(nodeDefinition, map, gateway){
 		return function(resp){
-			this.gotoNode(map.getNode(node), gateway); // ensure it's a node if one is available at this gateway
+			// ensure it's a node if one is available at this gateway
+			var node = map.getNode(nodeDefinition);
+			
+			if(this.isPassable(node)){
+				this.destinationNodes.length = 0;
+				this.destinationNodes.push(node);
+				
+				if(this.node){
+					this.onEdge(node);
+				} else {
+					this.distance = 0;
+				}
+				this.progress = 0;
+				
+				this.setState('going-' + gateway);
+				return true;
+			}
+			
+			return false;
 		};
 	},
 	distance = function(origin, destination){
@@ -81,8 +99,8 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 		}
 		return a;
 	},
-	axisProgress = function(r, o, d){
-		return o * (1 - r) + d * r;
+	axisProgress = function(r, o, d, f){
+		return o * (1 - r) + d * r + f;
 	},
 	isFriendly = function(entities, kinds){
 		var x = 0,
@@ -114,95 +132,146 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 		id: 'node-resident',
 		
 		constructor: function(definition){
-			this.nodeId = definition.nodeId || this.owner.nodeId;
+			var offset = definition.offset || this.owner.nodeOffset || {};
 			
+			this.nodeId = this.owner.nodeId = definition.nodeId || this.owner.nodeId;
+			
+			this.neighbors = {};
 			this.friendlyNodes = definition.nodes || null;
 			this.friendlyEntities = definition.shares || null;
 			this.speed = definition.speed || 0;
+			this.snapToNodes = definition.snapToNodes || false;
 			this.updateOrientation = definition.updateOrientation || false;
 			this.distance = 0;
+			this.buffer   = definition.buffer || 0;
 			this.progress = 0;
+			this.offset = {
+				x: offset.x || 0,
+				y: offset.y || 0,
+				z: offset.z || 0
+			};
+			this.destinationNodes = [];
+			this.algorithm = definition.algorithm || distance;
 			
 			this.state = this.owner.state;
 			this.currentState = '';
+			
 		},
 		
 		events: {
+			"set-algorithm": function(algorithm){
+				this.algorithm = algorithm || distance;
+			},
 			"handle-logic": function(resp){
-				var ratio = 0,
-				node = null;
+				var i    = 0,
+				ratio    = 0,
+				momentum = 0,
+				node     = null;
 				
-				if(this.destinationNode){
+				if(typeof this.owner.speed === 'number'){
+					this.speed = this.owner.speed;
+				}
+
+				if(this.followEntity){
+					node = this.followEntity.node || this.followEntity;
+//					console.log('Following (' + (node && node.isNode && (node !== this.node)) + ')', node);
+					if(node && node.isNode && (node !== this.node)){
+						this.lag = 0;
+						this.state.moving = this['goto-node']();
+						if (this.followDistance){
+							momentum = this.lag;
+						}
+					} else {
+					    this.followEntity = null;
+					}
+				} else {
+					momentum = this.speed * resp.delta;
+				}
+
+				// if goto-node was blocked, try again.
+				if(this.blocked){
+					this.blocked = false;
+					if(this.goingToNode){
+						this['goto-closest-node'](this.goingToNode);
+					}
+				}
+				
+				if(this.destinationNodes.length){
 					this.state.moving = true;
-					
-					//console.log('--- destination --- ' + this.destinationNode.id + ' ---');
 					if(this.node){
 						//console.log('Leaving ' + this.node.id);
-						this['leave-node']();
+						this.onEdge(this.destinationNodes[0]);
+					} else if(!this.lastNode){
+						this['on-node'](this.destinationNodes[0]);
+						this.destinationNodes.splice(0, 1);
+						if(!this.destinationNodes.length){
+							this.state.moving = false;
+							return ;
+						}
 					}
-					if(!this.speed || !this.lastNode){
-						//console.log('On Node ' + this.destinationNode.id);
-						this['on-node'](this.destinationNode);
-						this.destinationNode = null;
+					
+					if(this.snapToNodes){
+						for(; i < this.destinationNodes.length; i++){
+							this['on-node'](this.destinationNodes[i]);
+						}
+						this.destinationNodes.length = 0;
 					} else {
-						this.progress += resp.delta * this.speed;
-						ratio = this.progress / this.distance;
-						
-						if(ratio > 1){
-							//console.log('On Node ' + this.destinationNode.id + ' ratio: ' + this.progress + ' / ' + this.distance);
-							this['on-node'](this.destinationNode);
-							this.destinationNode = null;
-						} else {
-							//console.log('Onward ' + this.lastNode.id + ' to ' + this.destinationNode.id);
-							this.owner.x = axisProgress(ratio, this.lastNode.x, this.destinationNode.x);
-							this.owner.y = axisProgress(ratio, this.lastNode.y, this.destinationNode.y);
-							this.owner.z = axisProgress(ratio, this.lastNode.z, this.destinationNode.z);
+						while(this.destinationNodes.length && momentum){
+							if((this.progress + momentum) >= this.distance){
+								node = this.destinationNodes[0];
+								momentum -= (this.distance - this.progress);
+								this.progress = 0;
+//								if(this.destinationNodes[1]){
+//									this.distance = distance(node, this.destinationNodes[1]);
+//								}
+								this.destinationNodes.splice(0,1);
+								this['on-node'](node);
+								if(this.destinationNodes.length && momentum){
+									this.onEdge(this.destinationNodes[0]);								}
+							} else {
+								this.progress += momentum;
+								ratio = this.progress / this.distance;
+								this.owner.x = axisProgress(ratio, this.lastNode.x, this.destinationNodes[0].x, this.offset.x);
+								this.owner.y = axisProgress(ratio, this.lastNode.y, this.destinationNodes[0].y, this.offset.y);
+								this.owner.z = axisProgress(ratio, this.lastNode.z, this.destinationNodes[0].z, this.offset.z);
+								if(this.updateOrientation){
+									this.owner.orientation = angle(this.lastNode, this.destinationNodes[0], this.distance);
+								}
+								momentum = 0;
+							}
 						}
 					}
 				} else {
-					if(this.followEntity){
-						node = this.followEntity.node || this.followEntity;
-						console.log('Following (' + (node && node.isNode && (node !== this.node)) + ')', node);
-						if(node && node.isNode && (node !== this.node)){
-							this.state.moving = this['goto-node'](node);
-						} else {
-						    this.followEntity = null;
-						}
-					} else {
-						this.state.moving = false;
-					}
+					this.state.moving = false;
 				}
 			},
 			"on-node": function(node){
-				var i = '',
-				j     = 0,
+				var i    = '',
+				j        = 0,
 				entities = null;
 				
 				this.owner.node = this.node = node; //TODO: not sure if this needs to be accessible outside this component.
-				this.node.add(this.owner);
+				this.node.removeFromEdge(this.owner);
+				if(this.lastNode){
+					this.lastNode.removeFromEdge(this.owner);
+				}
+				this.node.addToNode(this.owner);
 				
 				this.setState('on-node');
 				
-				this.owner.x = this.node.x;
-				this.owner.y = this.node.y;
-				this.owner.z = this.node.z;
+				this.owner.x = this.node.x + this.offset.x;
+				this.owner.y = this.node.y + this.offset.y;
+				this.owner.z = this.node.z + this.offset.z;
+				if(this.updateOrientation && this.node.orientation){
+					this.owner.orientation = this.node.orientation;
+				}
 				
 				//add listeners for directions
-				for (i in node.neighbors){
-					this.addListener(i);
-					this[i] = createGateway(node.neighbors[i], node.map, i);
-					
-					//trigger "next-to" events
-					entities = node.map.getNode(node.neighbors[i]).contains;
-					for (j = 0; j < entities.length; j++){
-						entities[j].triggerEvent("next-to-" + this.owner.type, this.owner);
-						this.owner.triggerEvent("next-to-" + entities[j].type, entities[j]);
-					}
-				}
+				this['set-directions']();
 				
 				//trigger mapped messages for node types
 				if(this.friendlyNodes && this.friendlyNodes[node.type]){
-					this.owner.trigger(this.friendlyNodes[node.type]);
+					this.owner.trigger(this.friendlyNodes[node.type], node);
 				}
 
 				//trigger "with" events
@@ -216,74 +285,186 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 			},
 			"leave-node": function(){
 				if(this.node){
-					this.node.remove(this.owner);
+					this.node.removeFromNode(this.owner);
 					this.owner.triggerEvent('left-node', this.node);
-					for (var i in this.node.neighbors){
-						this.removeListener(i, this.listeners[i]);
-						delete this[i];
-					}
+					this['remove-directions']();
 				}
 				this.lastNode = this.node;
 				this.node = null;
 			},
-			"goto-node": function(node){
-				var i = '',
-				j     = 0,
-				k     = 0,
-				directions = {},
-				foundDirection = false,
-				all = [],
-				arr = null,
-				tempArray = null,
-				map = null,
-				count = 0,
-				depth = 20; //TODO: arbitrary limit
+			"goto-node": (function(){
+				var test = function(here, there){
+					return (here === there);
+				};
 				
-				if(this.node && node){
-					this.followEntity = node;
-					map = this.node.map || node.map;
-					for(i in this.node.neighbors){
-						directions[i] = this.traverseNode(map.getNode(this.node.neighbors[i]), node);
-						if(!directions[i]){
-							foundDirection = true;
-							for(k = 0; k < all.length; k++){
-								map.getNode(all[k]).checked = false;
-							}
-							return this.gotoNode(map.getNode(this.node.neighbors[i]), i);
-						} else {
-							all = all.concat(directions[i]);
-						}
+				return function(node){
+					var travResp = null,
+					depth = 20, //arbitrary limit
+					origin = this.node || this.lastNode;
+					
+					if(!node && this.followEntity){
+						node = this.followEntity.node || this.followEntity.lastNode || this.followEntity;
 					}
-					while(!foundDirection && (count <= depth)){
-						count += 1;
-						//console.log(count + ': ' + JSON.stringify(directions));
-						for(i in directions){
-							tempArray = [];
-							for (j = 0; j < directions[i].length; j++){
-								arr = this.traverseNode(map.getNode(directions[i][j]), node);
-								if(arr){
-									tempArray = tempArray.concat(arr);
-									all = all.concat(arr);
+					
+					if(origin && node && (this.node !== node)){
+						travResp = this.traverseNode({
+							depth:        depth,
+							origin:       origin,
+							position:     origin,
+							test:         test,
+							destination:  node,
+							nodes:        [],
+							shortestPath: Infinity,
+							distance:     0,
+							found:        false,
+							algorithm:    this.algorithm,
+							blocked:      false
+						});
+						
+						travResp.distance -= this.progress;
+						
+						if(travResp.found){
+							//TODO: should probably set this up apart from this containing function
+							if(this.followEntity){
+								if(!this.followDistance){
+									return this.setPath(travResp);
 								} else {
-									foundDirection = true;
-									for(k = 0; k < all.length; k++){
-										map.getNode(all[k]).checked = false;
+									if((travResp.distance + (this.followEntity.progress || 0)) > this.followDistance){
+										this.lag = travResp.distance + (this.followEntity.progress || 0) - this.followDistance;
+										return this.setPath(travResp);
+									} else {
+										this.lag = 0;
 									}
-									return this.gotoNode(map.getNode(this.node.neighbors[i]), i);
 								}
+							} else {
+								return this.setPath(travResp);
 							}
-							directions[i] = tempArray;
+						} else if(travResp.blocked){
+							this.blocked = true;
+							return false;
 						}
 					}
-					for(k = 0; k < all.length; k++){
-						map.getNode(all[k]).checked = false;
+					
+					return false;
+				};
+			})(),
+			"follow": function(entityOrNode){
+				if(entityOrNode.entity){
+					this.followDistance = entityOrNode.distance;
+					this.followEntity = entityOrNode.entity;
+				} else {
+					this.followDistance = 0;
+					this.followEntity = entityOrNode;
+				}
+			},
+			"goto-closest-node": (function(){
+				var checkList = function(here, list){
+					var i = 0;
+					
+					for (; i < list.length; i++){
+						if(list[i] === here){
+							return true;
+						}
+					}
+					
+					return false;
+				},
+				checkType = function(here, type){
+					return (here.type === type);
+				},
+				checkObjectType = function(here, node){
+					return (here.type === node.type);
+				};
+				
+				return function(nodesOrNodeType){
+					var travResp = null,
+					depth        = 20, //arbitrary limit
+					origin       = this.node || this.lastNode,
+					test         = null,
+					steps        = nodesOrNodeType.steps || 0;
+
+					this.goingToNode = nodesOrNodeType;
+					
+					if(typeof nodesOrNodeType === 'string'){
+						test = checkType;
+					} else if(typeof nodesOrNodeType.type === 'string'){
+						test = checkObjectType;
+					} else {
+						test = checkList;
+					}
+					
+					if(origin && nodesOrNodeType && !test(origin, nodesOrNodeType)){
+						travResp = this.traverseNode({
+							depth:        depth,
+							origin:       origin,
+							position:     origin,
+							test:         test,
+							destination:  nodesOrNodeType,
+							nodes:        [],
+							shortestPath: Infinity,
+							distance:     0,
+							found:        false,
+							algorithm:    this.algorithm,
+							blocked:      false
+						});
+						
+						travResp.distance -= this.progress;
+						
+						if(travResp.found){
+							//TODO: should probably set this up apart from this containing function
+							if(this.followEntity){
+								if(!this.followDistance){
+									return this.setPath(travResp, steps);
+								} else {
+									if((travResp.distance + (this.followEntity.progress || 0)) > this.followDistance){
+										this.lag = travResp.distance + (this.followEntity.progress || 0) - this.followDistance;
+										return this.setPath(travResp, steps);
+									} else {
+										this.lag = 0;
+									}
+								}
+							} else {
+								return this.setPath(travResp, steps);
+							}
+						} else if(travResp.blocked){
+							this.blocked = true;
+							return false;
+						}
+					}
+					
+					return false;
+				};
+			})(),
+			"set-directions": function(){
+				var i    = '',
+				j        = 0,
+				entities = null,
+				node     = this.node,
+				nextNode = null;
+				
+				this['remove-directions']();
+				
+				for (i in node.neighbors){
+					this.addListener(i);
+					this[i] = this.neighbors[i] = createGateway(node.neighbors[i], node.map, i);
+					
+					//trigger "next-to" events
+					nextNode = node.map.getNode(node.neighbors[i]);
+					if(nextNode){
+						entities = nextNode.contains;
+						for (j = 0; j < entities.length; j++){
+							entities[j].triggerEvent("next-to-" + this.owner.type, this.owner);
+							this.owner.triggerEvent("next-to-" + entities[j].type, entities[j]);
+						}
 					}
 				}
-				
-				return false;
 			},
-			"follow": function(entityOrNode){
-				this.followEntity = entityOrNode;
+			"remove-directions": function(){
+				for (var i in this.neighbors){
+					this.removeListener(i, this.listeners[i]);
+					delete this[i];
+					delete this.neighbors[i];
+				}
 			}
 		},
 		
@@ -303,40 +484,81 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				}*/
 				return node && (this.node !== node) && (!this.friendlyNodes || (typeof this.friendlyNodes[node.type] !== 'undefined')) && (!node.contains.length || isFriendly(node.contains, this.friendlyEntities));
 			},
-			traverseNode: function(node, goal){
-				var i = '',
-				nodes = [];
+			traverseNode: function(record){
+				//TODO: may want to make this use A*. Currently node traversal order is arbitrary and essentially searches entire graph, but does clip out paths that are too long.
 				
-				if(node === goal){
-					return false;
-				}
-				
-				if(this.isPassable(node) && !node.checked){
-					for (i in node.neighbors){
-						nodes.push(node.neighbors[i]);
-					}
-					node.checked = true;
-				}
-				return nodes;
-			},
-			gotoNode: function(node, gateway){
-				if(this.isPassable(node)){
-					this.destinationNode = node;
-					if(this.node){
-						this.distance = distance(this.node, node);
-						if(this.updateOrientation){
-							this.owner.orientation = angle(this.node, node, this.distance);
+				var i     = 1,
+				j         = '',
+				map       = record.position.map,
+				neighbors = null,
+				node      = null,
+				nodeList  = null,
+				resp      = null,
+				algorithm = record.algorithm || distance,
+				savedResp = {
+					shortestPath: Infinity,
+					found: false,
+					blocked: false
+				},
+				blocked   = true,
+				hasNeighbor = false;
+
+				if((record.depth === 0) || (record.distance > record.shortestPath)){
+					// if we've reached our search depth or are following a path longer than our recorded successful distance, bail
+					return record;
+				} else if(record.test(record.position, record.destination)){
+					// if we've reached our destination, set shortest path information and bail.
+					record.found = true;
+					record.shortestPath = record.distance;
+					return record;
+				} else {
+					//Make sure we do not trace an infinite node loop.
+					nodeList = record.nodes;
+					for(; i < nodeList.length - 1; i++){
+						if(nodeList[i] === record.position){
+							return record;
 						}
-					} else {
-						this.distance = 0;
 					}
-					this.progress = 0;
-					
-					this.setState('going-' + gateway);
-					return true;
+						
+					neighbors = record.position.neighbors;
+					for (j in neighbors){
+						node = map.getNode(neighbors[j]);
+						hasNeighbor = true;
+						if(this.isPassable(node)){
+							nodeList = record.nodes.slice();
+							nodeList.push(node);
+							resp = this.traverseNode({
+								depth:        record.depth - 1,
+								origin:       record.origin,
+								position:     node,
+								destination:  record.destination,
+								test:         record.test,
+								algorithm:    algorithm,
+								nodes:        nodeList,
+								shortestPath: record.shortestPath,
+								distance:     record.distance + algorithm(record.position, node),
+								gateway:      record.gateway || j,
+								found:        false,
+								blocked:      false
+							});
+							if(resp.found && (savedResp.shortestPath > resp.shortestPath)){
+								savedResp = resp;
+							}
+							blocked = false;
+						}
+					}
+					savedResp.blocked = (hasNeighbor && blocked);
+					return savedResp;
 				}
-				
-				return false;
+			},
+			setPath: function(resp, steps){
+				if(resp.nodes[0] === this.node){
+					resp.nodes.splice(0,1);
+				}
+				this.destinationNodes = resp.nodes;
+				if(steps){
+					this.destinationNodes.length = Math.min(steps, this.destinationNodes.length);
+				}
 			},
 			setState: function(state){
 				if(state === 'on-node'){
@@ -349,6 +571,15 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 					this.currentState = state;
 					this.state[state] = true;
 				}
+			},
+			onEdge: function(toNode){
+				this.distance = distance(this.node, toNode);
+				if(this.updateOrientation){
+					this.owner.orientation = angle(this.node, toNode, this.distance);
+				}
+				this.node.addToEdge(this.owner);
+				toNode.addToEdge(this.owner);
+				this['leave-node']();
 			}
 		}
 	});

@@ -9,7 +9,7 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 
 ### Listens for:
 - **add-node** - Expects a node definition to create a node in the node-map.
-  - @param definition.id (string or array) - This value becomes the id of the Node. Arrays are joined using "|" to create the id string.
+  - @param definition.nodeId (string or array) - This value becomes the id of the Node. Arrays are joined using "|" to create the id string.
   - @param definition.type (string) - This determines the type of the node.
   - @param definition.x (number) - Sets the x axis position of the node.
   - @param definition.y (number) - Sets the y axis position of the node.
@@ -26,7 +26,7 @@ This component sets up a node-map to be used by the [[node-resident]] component 
       // Optional. An array of node definitions to create the node-map.
         
         {
-          "id": "node1",
+          "nodeId": "node1",
           // A string or array that becomes the id of the Node. Arrays are joined using "|" to create the id string.
           
           "type": "path",
@@ -52,17 +52,18 @@ This component sets up a node-map to be used by the [[node-resident]] component 
     }
 */
 (function(){
+	// This is a basic node object, but can be replaced by entities having a `node` component if more functionality is needed.
 	var Node = function(definition, map){
-		if(definition.id){
-			if(typeof definition.id === 'string'){
-				this.id = definition.id;
-			} else if (definition.id.length) {
-				this.id = definition.id.join('|');
+		if(definition.nodeId){
+			if(typeof definition.nodeId === 'string'){
+				this.nodeId = definition.nodeId;
+			} else if (definition.nodeId.length) {
+				this.nodeId = definition.nodeId.join('|');
 			} else {
-				id = '' + Math.random();
+				this.nodeId = '' + Math.random();
 			}
 		} else {
-			id = '' + Math.random();
+			this.nodeId = '' + Math.random();
 		}
 		
 		this.isNode = true;
@@ -103,7 +104,7 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 		}
 	};
 
-	proto.add = function(entity){
+	proto.addToNode = function(entity){
 		for(var i = 0; i < this.contains.length; i++){
 			if(this.contains[i] === entity){
 				return false;
@@ -113,7 +114,7 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 		return entity;
 	};
 	
-	proto.remove = function(entity){
+	proto.removeFromNode = function(entity){
 		for(var i = 0; i < this.contains.length; i++){
 			if(this.contains[i] === entity){
 				return this.contains.splice(i,1)[0];
@@ -139,10 +140,17 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 
 		events: {
 			"add-node": function(nodeDefinition){
-				this.map.push(new Node(nodeDefinition, this));
+				if(nodeDefinition.isNode){// if it's already a node, put it on the map.
+					nodeDefinition.map = this;
+					this.map.push(nodeDefinition);
+				} else {
+					this.map.push(new Node(nodeDefinition, this));
+				}
 			},
 			"child-entity-added": function(entity){
-				if(entity.nodeId){
+				if(entity.isNode){        // a node
+					this['add-node'](entity);
+				} else if(entity.nodeId){ // a node-resident
 					entity.node = this.getNode(entity.nodeId);
 					entity.trigger('on-node', entity.node);
 				}
@@ -157,8 +165,12 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 				args    = arguments;
 				
 				if(args.length === 1){
-					if((typeof args[0] !== 'string') && args[0].length){
-						args = args[0];
+					if(typeof args[0] !== 'string'){
+						if(args[0].isNode){
+							return args[0];
+						} else if(args[0].length){
+							args = args[0];
+						}
 					}
 				}
 				
@@ -167,7 +179,7 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 					divider = '|';
 				}
 				for (i = 0; i < this.map.length; i++){
-					if(this.map[i].id === id){
+					if(this.map[i].nodeId === id){
 						return this.map[i];
 					}
 				}
