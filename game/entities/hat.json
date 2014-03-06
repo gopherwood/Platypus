@@ -1,0 +1,55 @@
+{
+	"id": "hat",
+	"components":[
+		{
+            "type": "entity-controller",
+            "controlMap":{
+                "key:e":            "go-up",//"jump",
+                "key:d":            "go-down",//"jump",
+                "key:s":            "go-left",
+                "key:f":            "go-right"
+            }
+        },{ 
+//            "type": "logic-portable"
+//        },{
+            "type": "logic-carrier"
+//        },{
+//            "type": "logic-gravity",
+//            "yGravity": 0.002
+        },{
+            "type": "logic-jump",
+            "accelerationY": -0.8
+        },{
+            "type": "logic-directional-movement",
+            "speed": 0.4
+        },{
+			"type": "collision-basic", 
+			"collisionType": "hat",
+            "solidCollisions": {
+                "block": "hit-solid",
+                "dirt": "hit-solid",
+                "hero": "hit-solid",
+                "tiles": "hit-solid",
+                "beetle": "hit-solid",
+                "briar": "hit-solid"
+            },
+            "shapes": [{
+                "type": "rectangle",
+                "width": 30,
+                "height": 40
+            },{
+                "type": "rectangle",
+                "width": 50,
+                "height": 6,
+                "regY": -23
+            }]           
+		},{
+		    "type": "render-debug"
+        }
+	],
+	"properties":{
+		"z": 50,
+		"width": 30,
+		"height": 40
+	}
+}

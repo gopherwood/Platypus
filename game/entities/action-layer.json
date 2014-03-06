@@ -5,9 +5,18 @@
         {"type": "handler-ai"},
         {"type": "handler-logic"},
         {"type": "handler-collision"},
-        {"type": "camera", "width": 960},
-        {"type": "handler-render-createjs"},
-        {"type": "entity-container"},
-        {"type": "tiled-loader"}
+        {
+           "type": "camera",
+           "width": 640
+        },
+        {
+            "type": "handler-render-createjs",
+            "autoClear": true
+        },{
+            "type": "entity-container"
+        },{
+            "type": "tiled-loader",
+            "images": ["tiles"]
+        }
     ]
 }

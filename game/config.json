@@ -1,22 +1,15 @@
-/*
- * config.json
- * 
- */
 {
-	"global": { // Settings for the entire game (Entities and component settings are generally found in their respective files.)
-	    "autoLoad": true,                        // Optional. Whether to immediately begin the game once the page is finished loading. Default is `true`.
-		"initialScene": "load",                  // Required. Once the game is ready, this scene is automatically loaded.
-		"fps": 60,                               // Optional. Target FPS to be used by the game engine. Default is 60 FPS.
+	"global": {
+		"initialScene": "load",                  // Once the game is ready, this scene is automatically loaded.
+		"fps": 60,                               // Target FPS to be used by the game engine.
 		"rootElement": "root",                   // Optional. Defines the id of the root DOM element used by the game. The default is "root" and this element is created if it does not already exist.
-        "aspectRatio": 1.333,                    // Optional. Whether the rootElement should be automatically resized to maintain aspect ratio. Leave this off if the rootElement is to be strictly styled using CSS.
-		"nativeAssetResolution": 960,            // Optional. Screen width in pixels that the source images were originally designed for.
+		"aspectRatio": 1.333,                    // Optional. Whether the rootElement should be automatically resized to maintain aspect ratio. Leave this off if the rootElement is to be strictly styled using CSS.
 		"resizeFont": true                       // Optional. Whether to adjust the body element's fontSize to proportionally match current window size. Useful for cascading the value of em's across all game DOM elements.
 	},
 	"builds": [                                  // Builds and their respective settings
 		{
 			"id": "production",                  // This is the id of the build and is matched to a folder name in the "builds/" folder. Build tools create this folder if needed.
 			"namespace": "PBS.KIDS.platformer",  // Optional namespace for the game - defaults to "PBS.KIDS.platformer"
-            "index": true,                       // Optional. If false, page is saved as the id + '.html' and resources are saved to a separate subfolder matching the id. Defaults to true, wherein the index and resources are in a single folder.
 			"cssCompression": true,
 			"jsCompression": true,
 			"manifest": true,                    // Determines whether this build uses Application Cache.
@@ -35,16 +28,9 @@
 		}
 	],
 	"source": { 
-		"assets": [ // Assets such as images and audio
-		
-			// Audio. Using different assets for browser compatability, as well as audio sprite for older iOS Safari compatability
-            {"id": "walk",           "src": {"ogg": "audio/walk.ogg",     	  "mp3": "audio/walk.mp3",     	   "m4aCombined": {"assetId": "combined", "src": "audio/combined.m4a", "data": {"offset": 3200,  "length": 330, "channels": 1}}}},
-            {"id": "jump",           "src": {"ogg": "audio/jump.ogg",     	  "mp3": "audio/jump.mp3",     	   "m4aCombined": {"assetId": "combined", "src": "audio/combined.m4a", "data": {"offset": 1500,  "length": 250, "channels": 1}}}},
-
-			// Images. Sprite sheets are evenly split into rows and columns. Could add support for sprite sheet definition files later.
-		    {"id": "buttons",    	 "src": "images/buttons.png"},
-			{"id": "mookie",         "src": "images/mookie.png",       "data": {"rows": 4, "columns": 4}},
-            {"id": "game-sprites",   "src": "images/game-sprites.png", "data": {"rows": 4, "columns": 4}},
+		"assets": [
+            {"id": "buttons",    	 "src": "images/buttons.png"},
+            {"id": "tiles",          "src": "images/tiles.png"},
             {"id": "title-screen",   "src": "images/title-screen.png"}
 		],
         "includes": [
@@ -98,10 +84,18 @@
             {"id": "logic-portal",	             "src": "../engine/components/logic-portal.js"},
 			{"id": "collision-basic",            "src": "../engine/components/collision-basic.js"},
 			{"id": "collision-tiles",            "src": "../engine/components/collision-tiles.js"},
-            {"id": "logic-fps-counter",          "src": "../engine/components/logic-fps-counter.js"},
-			
-			// This component was designed specifically for this game. If you want to design your own components, copy the template in game/components/ec-template.js to get started!
-            {"id": "logic-hero",                 "src": "components/logic-hero.js"}
+            {"id": "logic-portable",             "src": "../engine/components/logic-portable.js"},
+            {"id": "logic-carrier",              "src": "../engine/components/logic-carrier.js"},
+            {"id": "counter",           	  "src": "../engine/components/counter.js"},
+            {"id": "logic-timer",             "src": "../engine/components/logic-timer.js"},
+
+			// Game Specific Components
+            {"id": "render-gui",              "src": "components/render-gui.js"},
+            {"id": "render-counter",          "src": "components/render-counter.js"},
+            {"id": "render-clock",            "src": "components/render-clock.js"},
+            {"id": "logic-hero",              "src": "components/logic-hero.js"},
+            {"id": "logic-gui",               "src": "components/logic-gui.js"},
+            {"id": "logic-fps-counter",      "src": "../engine/components/logic-fps-counter.js"}
 		],
 		"entities": [ // JSON files describing entities
 		    {"id": "action-layer",    "src": "entities/action-layer.json"}, // If "src" key is included, this will be replaced by the JSON structure in the linked file.
@@ -119,11 +113,15 @@
             {"id": "button-play-game","src": "entities/button-play-game.json"},
             {"id": "button-right",    "src": "entities/button-right.json"},
             {"id": "button-mute",     "src": "entities/button-mute.json"},
-			{"id": "hero",            "src": "entities/hero.json"},
+            {"id": "hat",             "src": "entities/hat.json"},
+            {"id": "hero",            "src": "entities/hero.json"},
+            {"id": "block",           "src": "entities/block.json"},
             {"id": "progress-bar",    "src": "entities/progress-bar.json"},
             {"id": "level-portal",	  "src": "entities/level-portal.json"},
             {"id": "title-screen",    "src": "entities/title-screen.json"},
-            {"id": "fps-counter",	  "src": "entities/fps-counter.json"}
+            {"id": "gui",    		  "src": "entities/gui.json"},
+            {"id": "fps-counter",	  "src": "entities/fps-counter.json"},
+            {"id": "ball",	  		  "src": "entities/ball.json"}
 		],
 		"scenes": [ // JSON files describing scenes
             {"id": "load",        "src": "scenes/load.json"}, // If "src" key is included, this will be replaced by the JSON structure in the linked file.
@@ -131,7 +129,7 @@
 			{"id": "scene-level-1", "src": "scenes/scene-level-1.json"}
 		],
 		"levels": [ // JSON files describing levels
-            {"id": "level-1", "src": "levels/level-1.json"} // If "src" key is included, this will be replaced by the JSON structure in the linked file.
+            {"id": "level-1", "src": "levels/level-2.json"} // If "src" key is included, this will be replaced by the JSON structure in the linked file.
 
 		]
 	},

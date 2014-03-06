@@ -1,7 +1,7 @@
 {
     "id": "desktop-interface-layer",
     "filter": {
-        "excludes": ["mobile"]
+        "excludes": ["touch"]
     },
     "components": [
         {"type": "handler-logic"},

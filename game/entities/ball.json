@@ -1,0 +1,48 @@
+{
+	"id": "ball",
+	"components":[
+		{
+            "type": "logic-gravity"
+        },{
+            "type": "collision-basic", 
+            "collisionType": "ball",
+            "solidCollisions": {
+                "ball": "hit-solid",
+                "hero": "hit-solid",
+                "tiles": "hit-solid"
+            }/*,
+            "shapes": [{
+                "type": "circle",
+                "radius": 16
+            },{
+                "type": "circle",
+                "radius": 8,
+                "regX": -12
+            },{
+                "type": "circle",
+                "radius": 4,
+                "regX": 8
+            }]*/
+/*        },{
+            "type": "collision-basic", 
+            "collisionType": "spike",
+            "solidCollisions": {
+                "arms": "hit-solid"
+            },
+            "shapes": [{
+                "type": "rectangle",
+                "width": 6,
+                "height": 120,
+                "regY": 120,
+                "regX": 80
+            }]*/
+		},{
+		    "type": "render-debug"
+        }
+	],
+	"properties":{
+		"z": 50,
+		"width": 32,
+		"height": 32
+	}
+}

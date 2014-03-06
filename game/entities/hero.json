@@ -10,69 +10,83 @@
                 "key:up-arrow":		"jump",
                 "key:w":            "jump",
                 "key:left-arrow":   "go-left",
-                "key:a":   			"go-left",
+                "key:a":   			"go-up",
                 "button-left":      "go-left",
 				"key:right-arrow": 	"go-right",
-				"key:d": 			"go-right",
+				"key:z": 			"go-down",
 				"button-right":     "go-right"
 			}
-        },{ 
+//        },{ 
+//            "type": "logic-carrier"
+        },{
+            "type": "logic-portable"//,
+            //"portableDirections":{"right":true}
+        },{
             "type": "logic-gravity",
-            "yGravity" : .003
+            "yGravity": 0.002
+            //"xGravity": 0.002
         },{
             "type": "logic-jump",
-            "accelerationY": -1.2
+            "accelerationY": -0.8
+            //"accelerationX": -0.8
         },{
             "type": "logic-hero"
 		},{
             "type": "logic-directional-movement",
-            "speed": 0.6
+            "speed": 0.4
         },{
             "type": "collision-basic",
             "collisionType": "hero",
+            "shapes": [{
+                "type": "circle",
+                "radius": 16,
+                "regY": 70
+            },{
+                "type": "circle",
+                "radius": 22,
+                "regY": 40
+            },{
+                "type": "circle",
+                "radius": 28,
+                "regY": -2
+            }],
             "solidCollisions": {
+                "ball": "hit-solid",
                 "block": "hit-solid",
-                "dirt": "hit-solid",
+                "hero": "hit-solid",
+                "hat": "hit-solid",
                 "tiles": "hit-solid"
             }
-		},{
-			"type": "render-animation",
-			"mirror": "true",
-            "animationMap":{
-                "falling": "jumping",
-                "moving":  "walking",
-                "default": "standing"
-            }, 
-			"spriteSheet": {
-			    "framerate": 15,
-				"images": ["mookie"],
-				"frames": {
-					"width":  65,
-					"height": 83,
-					"regY":   82,
-					"regX":   33
-				},
-				"animations": {
-					"standing":[2],
-					"walking": {"frames": [3, 0, 1, 2]},
-					"jumping": {"frames": [0]}
-				}
-			}
-		},{
-		    "type": "audio",
-		    "audioMap": {
-		        "ground, moving": {"sound": "walk", "loop": 5000},
-		        "just-jumped": "jump"
-		    }
-//		},{
-//		    "type": "render-debug"
+/*        },{
+            "type": "collision-basic",
+            "bullet": true,
+            "collisionType": "arms",
+            "shapes": [{
+                "type": "rectangle",
+                "width": 16,
+                "height": 6,
+                "regX": 38,
+                "regY": 40
+            },{
+                "type": "rectangle",
+                "width": 16,
+                "height": 6,
+                "regX": -22,
+                "regY": 40
+            }],
+            "solidCollisions": {
+                "tiles": "hit-solid",
+                "spike": ""
+            }
+*/		},{
+		    "type": "render-debug"
 		}
 	],
 	"properties":{
-	    "alwaysOn": true,
+//	    "alwaysOn": true,
 		"z": 200,
-		"width": 24,
-		"height": 72,
+		"width": 60,
+		"height": 60,
 		"camera": "forward"
 	}
 }
