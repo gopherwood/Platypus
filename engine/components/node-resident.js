@@ -405,8 +405,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 			},
 			"remove-directions": function(){
 				for (var i in this.neighbors){
-					this.removeListener(i, this.listeners[i]);
-					delete this[i];
+					this.removeEventListener(i, this.neighbors[i]);
 					delete this.neighbors[i];
 				}
 			}
