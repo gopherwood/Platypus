@@ -149,7 +149,7 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 			},
 			"child-entity-added": function(entity){
 				if(entity.isNode){        // a node
-					this['add-node'](entity);
+					this.owner.triggerEvent('add-node', entity);
 				} else if(entity.nodeId){ // a node-resident
 					entity.node = this.getNode(entity.nodeId);
 					entity.trigger('on-node', entity.node);
