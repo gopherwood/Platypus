@@ -57,7 +57,7 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 		if(definition.nodeId){
 			if(typeof definition.nodeId === 'string'){
 				this.nodeId = definition.nodeId;
-			} else if (definition.nodeId.length) {
+			} else if (Array.isArray(definition.nodeId)) {
 				this.nodeId = definition.nodeId.join('|');
 			} else {
 				this.nodeId = '' + Math.random();
@@ -91,7 +91,7 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 					this.neighbors[desc] = neighbor;
 					return neighbor;
 				}
-			} else if (neighbor.length) {
+			} else if (Array.isArray(neighbor)) {
 				neighbor = this.map.getNode(neighbor.join('|'));
 				if(neighbor){
 					this.neighbors[desc] = neighbor;
@@ -133,7 +133,7 @@ This component sets up a node-map to be used by the [[node-resident]] component 
 			
 			if(definition.map){
 				for(; i < definition.map.length; i++){
-					this["add-node"](definition.map[i]);
+					this.map.push(new Node(definition.map[i], this));
 				}
 			}
 		},
