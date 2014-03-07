@@ -389,8 +389,8 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				this.owner.triggerEvent('remove-directions');
 				
 				for (i in node.neighbors){
-					this.addListener(i);
-					this[i] = this.neighbors[i] = createGateway(node.neighbors[i], node.map, i);
+					this.neighbors[i] = createGateway(node.neighbors[i], node.map, i);
+					this.addEventListener(i, this.neighbors[i]);
 					
 					//trigger "next-to" events
 					nextNode = node.map.getNode(node.neighbors[i]);
