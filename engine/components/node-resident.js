@@ -177,7 +177,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 //					console.log('Following (' + (node && node.isNode && (node !== this.node)) + ')', node);
 					if(node && node.isNode && (node !== this.node)){
 						this.lag = 0;
-						this.state.moving = this['goto-node']();
+						this.state.moving = this.gotoNode();
 						if (this.followDistance){
 							momentum = this.lag;
 						}
@@ -192,7 +192,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				if(this.blocked){
 					this.blocked = false;
 					if(this.goingToNode){
-						this['goto-closest-node'](this.goingToNode);
+						this.owner.triggerEvent('goto-closest-node', this.goingToNode);
 					}
 				}
 				
@@ -202,7 +202,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 						//console.log('Leaving ' + this.node.id);
 						this.onEdge(this.destinationNodes[0]);
 					} else if(!this.lastNode){
-						this['on-node'](this.destinationNodes[0]);
+						this.owner.triggerEvent('on-node', this.destinationNodes[0]);
 						this.destinationNodes.splice(0, 1);
 						if(!this.destinationNodes.length){
 							this.state.moving = false;
@@ -212,7 +212,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 					
 					if(this.snapToNodes){
 						for(; i < this.destinationNodes.length; i++){
-							this['on-node'](this.destinationNodes[i]);
+							this.owner.triggerEvent('on-node', this.destinationNodes[i]);
 						}
 						this.destinationNodes.length = 0;
 					} else {
@@ -221,11 +221,8 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 								node = this.destinationNodes[0];
 								momentum -= (this.distance - this.progress);
 								this.progress = 0;
-//								if(this.destinationNodes[1]){
-//									this.distance = distance(node, this.destinationNodes[1]);
-//								}
 								this.destinationNodes.splice(0,1);
-								this['on-node'](node);
+								this.owner.triggerEvent('on-node', node);
 								if(this.destinationNodes.length && momentum){
 									this.onEdge(this.destinationNodes[0]);								}
 							} else {
@@ -267,7 +264,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				}
 				
 				//add listeners for directions
-				this['set-directions']();
+				this.owner.triggerEvent('set-directions');
 				
 				//trigger mapped messages for node types
 				if(this.friendlyNodes && this.friendlyNodes[node.type]){
@@ -287,67 +284,14 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				if(this.node){
 					this.node.removeFromNode(this.owner);
 					this.owner.triggerEvent('left-node', this.node);
-					this['remove-directions']();
+					this.owner.triggerEvent('remove-directions');
 				}
 				this.lastNode = this.node;
 				this.node = null;
 			},
-			"goto-node": (function(){
-				var test = function(here, there){
-					return (here === there);
-				};
-				
-				return function(node){
-					var travResp = null,
-					depth = 20, //arbitrary limit
-					origin = this.node || this.lastNode;
-					
-					if(!node && this.followEntity){
-						node = this.followEntity.node || this.followEntity.lastNode || this.followEntity;
-					}
-					
-					if(origin && node && (this.node !== node)){
-						travResp = this.traverseNode({
-							depth:        depth,
-							origin:       origin,
-							position:     origin,
-							test:         test,
-							destination:  node,
-							nodes:        [],
-							shortestPath: Infinity,
-							distance:     0,
-							found:        false,
-							algorithm:    this.algorithm,
-							blocked:      false
-						});
-						
-						travResp.distance -= this.progress;
-						
-						if(travResp.found){
-							//TODO: should probably set this up apart from this containing function
-							if(this.followEntity){
-								if(!this.followDistance){
-									return this.setPath(travResp);
-								} else {
-									if((travResp.distance + (this.followEntity.progress || 0)) > this.followDistance){
-										this.lag = travResp.distance + (this.followEntity.progress || 0) - this.followDistance;
-										return this.setPath(travResp);
-									} else {
-										this.lag = 0;
-									}
-								}
-							} else {
-								return this.setPath(travResp);
-							}
-						} else if(travResp.blocked){
-							this.blocked = true;
-							return false;
-						}
-					}
-					
-					return false;
-				};
-			})(),
+			"goto-node": function(node){
+				this.gotoNode(node);
+			},
 			"follow": function(entityOrNode){
 				if(entityOrNode.entity){
 					this.followDistance = entityOrNode.distance;
@@ -442,7 +386,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				node     = this.node,
 				nextNode = null;
 				
-				this['remove-directions']();
+				this.owner.triggerEvent('remove-directions');
 				
 				for (i in node.neighbors){
 					this.addListener(i);
@@ -469,6 +413,63 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 		},
 		
 		methods:{
+			gotoNode: (function(){
+				var test = function(here, there){
+					return (here === there);
+				};
+				
+				return function(node){
+					var travResp = null,
+					depth = 20, //arbitrary limit
+					origin = this.node || this.lastNode;
+					
+					if(!node && this.followEntity){
+						node = this.followEntity.node || this.followEntity.lastNode || this.followEntity;
+					}
+					
+					if(origin && node && (this.node !== node)){
+						travResp = this.traverseNode({
+							depth:        depth,
+							origin:       origin,
+							position:     origin,
+							test:         test,
+							destination:  node,
+							nodes:        [],
+							shortestPath: Infinity,
+							distance:     0,
+							found:        false,
+							algorithm:    this.algorithm,
+							blocked:      false
+						});
+						
+						travResp.distance -= this.progress;
+						
+						if(travResp.found){
+							//TODO: should probably set this up apart from this containing function
+							if(this.followEntity){
+								if(!this.followDistance){
+									return this.setPath(travResp);
+								} else {
+									if((travResp.distance + (this.followEntity.progress || 0)) > this.followDistance){
+										this.lag = travResp.distance + (this.followEntity.progress || 0) - this.followDistance;
+										return this.setPath(travResp);
+									} else {
+										this.lag = 0;
+									}
+								}
+							} else {
+								return this.setPath(travResp);
+							}
+						} else if(travResp.blocked){
+							this.blocked = true;
+							return false;
+						}
+					}
+					
+					return false;
+				};
+			})(),
+			
 			isPassable: function(node){
 				/*if(log){
 					if(!node){
@@ -579,7 +580,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				}
 				this.node.addToEdge(this.owner);
 				toNode.addToEdge(this.owner);
-				this['leave-node']();
+				this.owner.triggerEvent('leave-node');
 			}
 		}
 	});
