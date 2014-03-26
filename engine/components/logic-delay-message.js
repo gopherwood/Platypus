@@ -36,7 +36,10 @@ This component allows certain messages to trigger new messages at a later time. 
           
           "singleInstance": true,
           // This determines whether more "saw-clown" events triggered during the delayed response period should be treated as new messages to be triggered or whether the initial instance prevents additional instances from occurring.
-
+          
+          "repeat": true,
+          // This sets whether the event should continue to trigger every "delay" amount of time until "cancelEvent" is called. Defaults to `false`.
+          
           "cancelEvent": "dropped-popcorn"
           // If set, on receiving this event, the component will not trigger the "laugh" event after all if it's currently planning to.
         },
@@ -52,25 +55,37 @@ This component allows certain messages to trigger new messages at a later time. 
 */
 (function(){
 	var createMessage = function(event){
+		var includeMessage = function(event, message){
+			if(message && !event.message){
+				return {
+					event: event.event,
+					message: message,
+					delay: event.delay,
+					repeat: event.repeat
+				};
+			} else {
+				return event;
+			}
+		};
 		if(event.singleInstance){
-			return function(){
+			return function(message){
 				var i = 0,
 				add = true;
 				
 				for (; i < this.queue.length; i++){
-					if(this.queue[i] === event){
+					if(this.queue[i].event === event.event){
 						add = false;
 					}
 				}
 				
 				if(add){
-					this.queue.push(event);
+					this.queue.push(includeMessage(event, message));
 					this.queueTimes.push(event.delay);
 				}
 			};
 		} else {
-			return function(){
-				this.queue.push(event);
+			return function(message){
+				this.queue.push(includeMessage(event, message));
 				this.queueTimes.push(event.delay);
 			};
 		}
@@ -97,12 +112,10 @@ This component allows certain messages to trigger new messages at a later time. 
 			
 			if(definition.events){
 				for(var event in definition.events){
-					this[event] = createMessage(definition.events[event]);
-					this.addListener(event);
+					this.addEventListener(event, createMessage(definition.events[event]));
 					
 					if(definition.events[event].cancelEvent) {
-						this[definition.events[event].cancelEvent] = createCancellation(definition.events[event]);
-						this.addListener(definition.events[event].cancelEvent);
+						this.addEventListener(definition.events[event].cancelEvent, createCancellation(definition.events[event]));
 					}
 				}
 			}
@@ -117,8 +130,12 @@ This component allows certain messages to trigger new messages at a later time. 
 					
 					if(this.queueTimes[i] <= 0){
 						this.owner.trigger(this.queue[i].event, this.queue[i].message);
-						this.queueTimes.splice(i,1);
-						this.queue.splice(i,1);
+						if(this.queue[i].repeat){
+							this.queueTimes[i] += this.queue[i].delay;
+						} else {
+							this.queueTimes.splice(i,1);
+							this.queue.splice(i,1);
+						}
 					}
 				}
 			}

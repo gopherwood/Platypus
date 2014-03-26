@@ -2,6 +2,9 @@
 # CLASS entity
 The Entity object acts as a container for components, facilitates communication between components and other game objects, and includes properties set by components to maintain a current state. The entity object serves as the foundation for most of the game objects in the Platformer engine.
 
+## Dependencies
+- **[[Messenger]] - Entity uses `messenger` in its prototypal chain to enable event handling.
+
 ## Messages
 
 ### Local Broadcasts:
@@ -71,7 +74,8 @@ The Entity object acts as a container for components, facilitates communication 
     }
 */
 platformer.classes.entity = (function(){
-	var entity = function (definition, instanceDefinition){
+	var entityIds = {},
+	entity = function (definition, instanceDefinition){
 		var self             = this,
 		index                = undefined,
 		componentDefinition  = undefined,
@@ -81,11 +85,20 @@ platformer.classes.entity = (function(){
 		instance             = instanceDefinition || {},
 		instanceProperties   = instance.properties || {};
 		
+		// Set properties of messenger on this entity.
+		platformer.classes.messenger.call(this);
+		
 		self.components  = [];
-		self.messages    = [];
-		self.loopCheck   = [];
-		self.unbindLater = [];
-		self.type = def.id;
+		self.type = def.id || 'none';
+		
+		self.id = instanceDefinition.id;
+		if(!self.id){
+			if(!entityIds[self.type]){
+				entityIds[self.type] = 0;
+			}
+			self.id = self.type + '-' + entityIds[self.type];
+			entityIds[self.type] += 1;
+		}
 
 		this.setProperty(defaultProperties); // This takes the list of properties in the JSON definition and appends them directly to the object.
 		this.setProperty(instanceProperties); // This takes the list of options for this particular instance and appends them directly to the object.
@@ -109,7 +122,7 @@ platformer.classes.entity = (function(){
 		
 		self.trigger('load');
 	};
-	var proto = entity.prototype;
+	var proto = entity.prototype = new platformer.classes.messenger();
 	
 	proto.toString = function(){
 		return "[entity " + this.type + "]";
@@ -121,102 +134,28 @@ platformer.classes.entity = (function(){
 	};
 	
 	proto.removeComponent = function(component){
-	    for (var index in this.components){
-		    if(this.components[index] === component){
-		    	this.components.splice(index, 1);
-		    	component.destroy();
-			    return component;
+		var index = '';
+		
+		if(typeof component === 'string'){
+		    for (index in this.components){
+			    if(this.components[index].type === component){
+			    	component = this.components[index];
+			    	this.components.splice(index, 1);
+			    	component.destroy();
+				    return component;
+			    }
 		    }
-	    }
+		} else {
+		    for (index in this.components){
+			    if(this.components[index] === component){
+			    	this.components.splice(index, 1);
+			    	component.destroy();
+				    return component;
+			    }
+		    }
+		}
+		
 	    return false;
-	};
-	
-	proto.bind = function(event, func){
-		if(!this.messages[event]) this.messages[event] = [];
-		this.messages[event].push(func);
-	};
-	
-	proto.unbind = function(event, func){
-		var found = false, j = 0;
-		
-		if(this.loopCheck.length){
-			for(j = 0; j < this.loopCheck.length; j++){
-				if(this.loopCheck[j] === event){
-					found = true;
-					break;
-				}
-			}
-		}
-			
-		if(found){ //We're currently busy triggering messages like this, so we shouldn't remove message handlers until we're finished.
-			this.unbindLater.push({event: event, func: func});
-		} else {
-			this.safelyUnbind(event, func);
-		}
-	};
-
-	proto.safelyUnbind = function(event, func){
-		if(!this.messages[event]) this.messages[event] = [];
-		for (var x in this.messages[event]){
-			if(this.messages[event][x] === func){
-				this.messages[event].splice(x,1);
-				break;
-			}
-		}
-	};
-	
-	// This handles multiple event structures: "", [], and {}
-	proto.trigger = function(events, message, debug){
-		var i = 0, count = 0;
-		
-		if(typeof events === 'string') {
-			return this.triggerEvent(events, message, debug);
-		} else if (events.length) {
-			for (; i < events.length; i++){
-				count += this.trigger(events[i], message, debug);
-			}
-			return count;
-		} else if (events.event) {
-			return this.triggerEvent(events.event, events.message || message, debug);
-		} else {
-			console.warn('Event incorrectly formatted: must be string, array, or object containing an "event" property.');
-			return 0;
-		}
-	};
-	
-	// This handles string events only
-	proto.triggerEvent = function(event, value, debug){
-		var i = 0, j = 0;
-		
-		if(this.debug || debug || (value && value.debug)){
-			if(this.messages[event] && this.messages[event].length){
-				console.log('Entity "' + this.type + '": Event "' + event + '" has ' + this.messages[event].length + ' subscriber' + ((this.messages[event].length>1)?'s':'') + '.', value);
-			} else {
-				console.warn('Entity "' + this.type + '": Event "' + event + '" has no subscribers.', value);
-			}
-		}
-		for (i = 0; i < this.loopCheck.length; i++){
-			if(this.loopCheck[i] === event){
-				throw "Endless loop detected for '" + event + "'.";
-			}
-		}
-		i = 0;
-		this.loopCheck.push(event);
-		if(this.messages[event]){
-			for (i = 0; i < this.messages[event].length; i++){
-				this.messages[event][i](value, debug);
-			}
-		}
-		this.loopCheck.length = this.loopCheck.length - 1;
-		
-		if(!this.loopCheck.length && this.unbindLater.length){
-			for(j = 0; j < this.unbindLater.length; j++){
-				this.safelyUnbind(this.unbindLater[j].event, this.unbindLater[j].func);
-			}
-			this.unbindLater.length = 0;
-		}
-		
-		return i;
 	};
 	
 	proto.setProperty = function(keyValuePairs){
@@ -225,14 +164,6 @@ platformer.classes.entity = (function(){
 		for (index in keyValuePairs){ // This takes a list of properties and appends them directly to the object.
 			this[index] = keyValuePairs[index];
 		}
-	};
-	
-	proto.getMessageIds = function(){
-		var events = [];
-		for (var event in this.messages){
-			events.push(event);
-		}
-		return events;
 	};
 	
 	proto.destroy = function(){

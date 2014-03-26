@@ -96,11 +96,20 @@ This component is attached to a top-level entity (loaded by the [[Scene]]) and, 
 		events: {
 			"scene-loaded": function(persistentData){
 				if (!this.manuallyLoad) {
-					this['load-level']({level: this.level || persistentData.level, persistentData: persistentData});
+					this.loadLevel({
+						level: this.level || persistentData.level,
+						persistentData: persistentData
+					});
 				}
 			},
 			
 			"load-level": function(levelData){
+				this.loadLevel(levelData);
+			}
+		},
+		
+		methods: {
+			loadLevel: function(levelData){
 				var level = levelData.level,
 				actionLayer = 0,
 				layer = false;
@@ -123,10 +132,8 @@ This component is attached to a top-level entity (loaded by the [[Scene]]) and, 
 					camera: this.followEntity
 				});
 				this.owner.removeComponent(this);
-			}
-		},
-		
-		methods: {
+			},
+			
 			setupLayer: function(layer, level, combineRenderLayer){
 				var self       = this,
 				images         = self.images || [],
@@ -139,19 +146,20 @@ This component is attached to a top-level entity (loaded by the [[Scene]]) and, 
 				x              = 0,
 				y              = 0,
 				obj            = 0,
-				entity         = undefined,
+				entity         = null,
+				property       = null,
 				entityType     = '',
-				tileset        = undefined,
-				properties     = undefined,
+				tileset        = null,
+				properties     = null,
 				layerCollides  = true,
 				numberProperty = false,
 				createLayer = function(entityKind){
 					var width      = layer.width,
 					height         = layer.height,
-					tileDefinition = undefined,
-					importAnimation= undefined,
-					importCollision= undefined,
-					importRender   = undefined,
+					tileDefinition = null,
+					importAnimation= null,
+					importCollision= null,
+					importRender   = null,
 					renderTiles    = false,
 					tileset        = null,
 					jumpthroughs   = null,
@@ -249,6 +257,7 @@ This component is attached to a top-level entity (loaded by the [[Scene]]) and, 
 						if(platformer.assets[tilesets[x].name]){ // Prefer to have name in tiled match image id in game
 							images.push(platformer.assets[tilesets[x].name]);
 						} else {
+							console.warn('Component tiled-loader: Cannot find the "' + tilesets[x].name + '" sprite sheet. Add it to the list of assets in config.json and give it the id "' + tilesets[x].name + '".');
 							images.push(tilesets[x].image);
 						}
 					}
@@ -339,17 +348,28 @@ This component is attached to a top-level entity (loaded by the [[Scene]]) and, 
 							}
 							
 							for (x in entity.properties){
-								//This is going to assume that if you pass in something that starts with a number, it is a number and converts it to one.
-							    numberProperty = parseFloat(entity.properties[x]);
-								if (numberProperty == 0 || (!!numberProperty))
-								{
-									properties[x] = numberProperty;
-								} else if(entity.properties[x] == 'true') {
-									properties[x] = true;
-								} else if(entity.properties[x] == 'false') {
-									properties[x] = false;
+								property = entity.properties[x];
+								if(typeof property === 'string'){
+									//This is going to assume that if you pass in something that starts with a number, it is a number and converts it to one.
+								    numberProperty = parseFloat(property);
+									if (numberProperty == 0 || (!!numberProperty))
+									{
+										properties[x] = numberProperty;
+									} else if(property == 'true') {
+										properties[x] = true;
+									} else if(property == 'false') {
+										properties[x] = false;
+									} else if((property.length > 2) && (((property[0] === '{') && (property[property.length - 1] === '}')) || ((property[0] === '[') && (property[property.length - 1] === ']')))){
+										try {
+											properties[x] = JSON.parse(property);
+										} catch(e) {
+											properties[x] = property;
+										}
+									} else {
+										properties[x] = property;
+									}
 								} else {
-									properties[x] = entity.properties[x];
+									properties[x] = property;
 								}
 							}
 							widthOffset  = properties.width  = (entity.width  || tileWidth)  * this.unitsPerPixel;

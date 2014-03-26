@@ -144,7 +144,8 @@ This component loads a list of assets, wrapping PreloadJS functionality into a g
 		    						this.assets[i].src     = this.assets[i].src[j].src;
 		    						checkPush({
 		    							id:  this.assets[i].assetId || this.assets[i].id,
-		    							src: this.assets[i].src
+		    							src: this.assets[i].src,
+		    							data: this.assets[i].data
 		    						}, loadAssets);
 		    					}
 		    					break;
@@ -161,7 +162,8 @@ This component loads a list of assets, wrapping PreloadJS functionality into a g
 		    						this.assets[i].src     = this.assets[i].src['default'].src;
 		    						checkPush({
 		    							id:  this.assets[i].assetId || this.assets[i].id,
-		    							src: this.assets[i].src
+		    							src: this.assets[i].src,
+		    							data: this.assets[i].data
 		    						}, loadAssets);
 		    					}
 		    				} else {
@@ -171,20 +173,10 @@ This component loads a list of assets, wrapping PreloadJS functionality into a g
 		    		}
 		    	}
 
-		    	// Allow iOS 5- to play HTML5 audio using SoundJS by overriding the isSupported check. (Otherwise there is no audio support for iOS 5-.)
-		    	createjs.HTMLAudioPlugin.isSupported = function () {
-		    		createjs.HTMLAudioPlugin.generateCapabilities();
-		    		var t = createjs.HTMLAudioPlugin.tag;
-		    		if (t == null || createjs.HTMLAudioPlugin.capabilities == null) {
-		    			return false;
-		    		}
-		    		return true;
-		    	};
-//		    	createjs.Sound.initializeDefaultPlugins();
-		    	createjs.Sound.registerPlugins([createjs.HTMLAudioPlugin]);
-
+		    	if(createjs.Sound){
+			    	loader.installPlugin(createjs.Sound);
+		    	}
 		    	self.message.total = loadAssets.length;
-		    	loader.installPlugin(createjs.Sound);
 		    	loader.loadManifest(loadAssets);
 		    	platformer.assets = [];
 		    },

@@ -44,6 +44,12 @@ This component is attached to entities that will appear in the game world. It re
   - @param x (number) - The x-location of the mouse in stage coordinates.
   - @param y (number) - The y-location of the mouse in stage coordinates.
   - @param entity ([[Entity]]) - The entity clicked on.  
+- **pressmove** - This component captures this event from CreateJS and triggers it on the entity.
+  - @param event (event object) - The event from Javascript.
+  - @param over (boolean) - Whether the mouse is over the object or not.
+  - @param x (number) - The x-location of the mouse in stage coordinates.
+  - @param y (number) - The y-location of the mouse in stage coordinates.
+  - @param entity ([[Entity]]) - The entity clicked on.  
 - **pin-me** - If this component should be pinned to another animation, it will trigger this event in an attempt to initiate the pinning.
   - @param pinId (string) - Required. A string identifying the id of a pin location that this render-animation wants to be pinned to.
 - **attach-pin** - This component broadcasts this message if it has a list of pins available for other animations on the entity to attach to.
@@ -96,8 +102,8 @@ This component is attached to entities that will appear in the game world. It re
       
       "acceptInput": {
       	//Optional - What types of input the object should take. This component defaults to not accept any input.
-      	"hover": false;
-      	"click": false; 
+      	"hover": false,
+      	"click": false
       },
       
       "pins": [{
@@ -135,8 +141,11 @@ This component is attached to entities that will appear in the game world. It re
       "flip": false,
       //Optional - Whether this object can be flipped over Y. To flip it over Y set the orientation value in the logical state to be great than 180.
       
-      "hidden": false
+      "hidden": false,
       //Optional - Whether this object is visible or not. To change the hidden value dynamically add a 'hidden' property to the logical state object and set it to true or false.
+      
+      "cache": false
+      //Optional - Whether this animation should be cached into an entity with a `render-tiles` component (like "render-layer"). The `render-tiles` component must have its "entityCache" property set to `true`. Warning! This is a one-direction setting and will remove this component from the entity once the current frame has been cached.
     }
     
 [link1]: http://www.createjs.com/Docs/EaselJS/module_EaselJS.html
@@ -223,7 +232,6 @@ This component is attached to entities that will appear in the game world. It re
 			
 			this.checkStates = [];
 			for(var i in map){
-				this.addListener(i);
 				animation = map[i];
 				
 				if(animation[animation.length - 1] === '!'){
@@ -233,7 +241,7 @@ This component is attached to entities that will appear in the game world. It re
 					this.followThroughs[animation] = false;
 				}
 				
-				this[i] = changeState(animation);
+				this.addEventListener(i, changeState(animation));
 				this.checkStates.push(createTest(i, animation));
 			}
 			lastAnimation = animation;
@@ -245,7 +253,7 @@ This component is attached to entities that will appear in the game world. It re
 			var scaleX = spriteSheet.images[0].scaleX || 1,
 			scaleY     = spriteSheet.images[0].scaleY || 1;
 			if((scaleX !== 1) || (scaleY !== 1)){
-				if(spriteSheet.frames.length){ //frames are an array
+				if(Array.isArray(spriteSheet.frames)){ //frames are an array
 					var arr = [];
 					regX = [];
 					regY = [];
@@ -274,7 +282,7 @@ This component is attached to entities that will appear in the game world. It re
 					};
 				}
 			} else {
-				if(spriteSheet.frames.length){ //frames are an array
+				if(Array.isArray(spriteSheet.frames)){ //frames are an array
 					regX = [];
 					regY = [];
 					for (var i = 0; i < spriteSheet.frames.length; i++){
@@ -354,24 +362,86 @@ This component is attached to entities that will appear in the game world. It re
 			}
 
 			//Check state against entity's prior state to update animation if necessary on instantiation.
-			this['logical-state'](this.state);
+			this.stateChange = true;
+			
+			if(definition.cache){
+				this.updateSprite();
+				this.owner.cacheRender = this.container;
+			}
 		},
 		
 		events: {
-			"handle-render-load": function(obj){
-				if(!this.pinTo){
-					this.stage = obj.stage;
-					if(!this.stage){
-						return;
-					}
-					this.stage.addChild(this.container);
-					this.addInputs();				
-				} else {
-					return;
+			"handle-render-load": function(resp){
+				if(resp && resp.stage){
+					this.addStage(resp.stage);
 				}
 			},
 			
-			"handle-render": (function(){
+			"handle-render": function(resp){
+				if(!this.stage){
+					if(!this.pinTo) { //In case this component was added after handler-render is initiated
+						if(!this.addStage(resp.stage)){
+							console.warn('No CreateJS Stage, removing render component from "' + this.owner.type + '".');
+							this.owner.removeComponent(this);
+							return;
+						}
+					} else {
+						return;
+					}
+				}
+				
+				this.updateSprite();
+			},
+			
+			"logical-state": function(state){
+				this.stateChange = true;
+			},
+			
+			"hide-animation": function(){
+				this.container.hidden = true;
+			},
+
+			"show-animation": function(){
+				this.container.hidden = false;
+			},
+			
+			"pin-me": function(pinId){
+				if(this.pins && this.pins[pinId]){
+					this.owner.trigger("attach-pin", this.pins[pinId]);
+				}
+			},
+			
+			"attach-pin": function(pinInfo){
+				if(pinInfo.pinId === this.pinTo){
+					this.stage = pinInfo.container;
+					this.stage.addChild(this.container);
+					this.addInputs();				
+					this.pinnedTo = pinInfo;
+				}
+			},
+			
+			"remove-pin": function(pinInfo){
+				if(pinInfo.pinId === this.pinTo){
+					this.stage.removeChild(this.container);
+					this.stage = null;
+					this.pinnedTo = null;
+				}
+			}
+		},
+		
+		methods: {
+			addStage: function(stage){
+				if(stage && !this.pinTo){
+					this.stage = stage;
+					this.stage.addChild(this.container);
+					this.addInputs();
+					return stage;
+				} else {
+					return null;
+				}
+			},
+			
+			updateSprite: (function(){
 				var sort = function(a, b) {
 					return a.z - b.z;
 				};
@@ -380,25 +450,14 @@ This component is attached to entities that will appear in the game world. It re
 					var testCase = false, i = 0,
 					angle = null;
 					
-					if(!this.stage){
-						if(!this.pinTo) { //In case this component was added after handler-render is initiated
-							this['handle-render-load'](resp);
-							if(!this.stage){
-								console.warn('No CreateJS Stage, removing render component from "' + this.owner.type + '".');
-								this.owner.removeComponent(this);
-								return;
-							}
-						} else {
-							return;
-						}
-					}
-					
 					if(this.pinnedTo){
 						if(this.pinnedTo.frames && this.pinnedTo.frames[this.pinnedTo.animation.currentFrame]){
 							this.container.x = this.pinnedTo.frames[this.pinnedTo.animation.currentFrame].x;
 							this.container.y = this.pinnedTo.frames[this.pinnedTo.animation.currentFrame].y;
 							if(this.container.z !== this.pinnedTo.frames[this.pinnedTo.animation.currentFrame].z){
-								this.stage.reorder = true;
+								if(this.stage){
+									this.stage.reorder = true;
+								}
 								this.container.z = this.pinnedTo.frames[this.pinnedTo.animation.currentFrame].z;
 							}
 							this.container.visible = true;
@@ -406,7 +465,9 @@ This component is attached to entities that will appear in the game world. It re
 							this.container.x = this.pinnedTo.defaultPin.x;
 							this.container.y = this.pinnedTo.defaultPin.y;
 							if(this.container.z !== this.pinnedTo.defaultPin.z){
-								this.stage.reorder = true;
+								if(this.stage){
+									this.stage.reorder = true;
+								}
 								this.container.z = this.pinnedTo.defaultPin.z;
 							}
 							this.container.visible = true;
@@ -417,7 +478,9 @@ This component is attached to entities that will appear in the game world. It re
 						this.container.x = this.owner.x;
 						this.container.y = this.owner.y;
 						if(this.container.z !== (this.owner.z + this.offsetZ)){
-							this.stage.reorder = true;
+							if(this.stage){
+								this.stage.reorder = true;
+							}
 							this.container.z = (this.owner.z + this.offsetZ);
 						}
 	
@@ -476,6 +539,10 @@ This component is attached to entities that will appear in the game world. It re
 					}
 					
 					if(this.stateChange){
+						if(this.state['hidden'] !== undefined) {
+							this.container.hidden = this.state['hidden'];
+						}
+
 						if(this.checkStates){
 							for(; i < this.checkStates.length; i++){
 								testCase = this.checkStates[i](this.state);
@@ -502,46 +569,6 @@ This component is attached to entities that will appear in the game world. It re
 				};
 			})(),
 			
-			"logical-state": function(state){
-				this.stateChange = true;
-				if(state['hidden'] !== undefined) {
-					this.container.hidden = state['hidden'];
-				}
-			},
-			
-			"hide-animation": function(){
-				this.container.hidden = true;
-			},
-
-			"show-animation": function(){
-				this.container.hidden = false;
-			},
-			
-			"pin-me": function(pinId){
-				if(this.pins && this.pins[pinId]){
-					this.owner.trigger("attach-pin", this.pins[pinId]);
-				}
-			},
-			
-			"attach-pin": function(pinInfo){
-				if(pinInfo.pinId === this.pinTo){
-					this.stage = pinInfo.container;
-					this.stage.addChild(this.container);
-					this.addInputs();				
-					this.pinnedTo = pinInfo;
-				}
-			},
-			
-			"remove-pin": function(pinInfo){
-				if(pinInfo.pinId === this.pinTo){
-					this.stage.removeChild(this.container);
-					this.stage = null;
-					this.pinnedTo = null;
-				}
-			}
-		},
-		
-		methods: {
 			addInputs: function(){
 				var self = this, over = false;
 				
@@ -578,6 +605,16 @@ This component is attached to entities that will appear in the game world. It re
 								y: event.stageY,
 								entity: self.owner
 							});
+						});
+						
+					});
+					this.anim.addEventListener('pressmove', function(event) {
+						self.owner.trigger('pressmove', {
+							event: event.nativeEvent,
+							over: over,
+							x: event.stageX,
+							y: event.stageY,
+							entity: self.owner
 						});
 					});
 					this.anim.addEventListener('mouseout', function(){over = false;});

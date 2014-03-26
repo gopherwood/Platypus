@@ -49,9 +49,9 @@ Tween takes a list of tween definitions and plays them as needed.
 			arr = null,
 			tween = createjs.Tween.get(this.owner);
 			
-			if(values && (typeof values !== 'string') && (values.length)){
+			if(Array.isArray(values)){
 				tweens = values;
-			} else if(typeof tweens === 'string' || !tweens.length){
+			} else {
 				return;
 			}
 			
@@ -59,7 +59,7 @@ Tween takes a list of tween definitions and plays them as needed.
 				tweenDef = tweens[i];
 				if(typeof tweenDef === 'string'){
 					tween.call(createTrigger(this.owner, tweenDef));
-				} else if (tweenDef.length) {
+				} else if (Array.isArray(tweenDef)) {
 					if(tweenDef[0] === 'call' && typeof tweenDef[1] === 'string'){
 						tween.call(createTrigger(this.owner, tweenDef[1]));
 					} else {
@@ -84,8 +84,7 @@ Tween takes a list of tween definitions and plays them as needed.
 		constructor: function(definition){
 			if(definition.events){
 				for(var event in definition.events){
-					this[event] = createTween(definition.events[event]);
-					this.addListener(event);
+					this.addEventListener(event, createTween(definition.events[event]));
 				}
 			}
 		}

@@ -217,7 +217,7 @@ If either worldWidth and worldHeight is set to 0 it is assumed the world is infi
 		events: {
 			"load": function(){
 				this.element = this.owner.canvas || this.owner.element || this.owner.rootElement;
-				this.resize();
+				resize(this);
 			},
 			"child-entity-added": function(entity){
 				var messageIds = entity.getMessageIds(); 
@@ -318,6 +318,12 @@ If either worldWidth and worldHeight is set to 0 it is assumed the world is infi
 				resize(this);
 			},
 			"follow": function (def){
+				this.follow(def);
+			}
+		},
+		
+		methods: {
+			follow: function (def){
 				if (def.time){ //save current follow
 					if(!this.lastFollow.begin){
 						this.lastFollow.entity = this.following;
@@ -346,8 +352,8 @@ If either worldWidth and worldHeight is set to 0 it is assumed the world is infi
 					this.state = 'following';
 					this.followFocused = false;
 					this.following = def.entity;
-					this.lastLeft  = def.entity.x;
-					this.lastTop   = def.entity.y;
+					this.lastLeft  = def.entity.x || 0;
+					this.lastTop   = def.entity.y || 0;
 					this.forwardX  = def.movementX || (this.transitionX / 10);
 					this.forwardY  = def.movementY || 0;
 					this.averageOffsetX = 0;
@@ -369,6 +375,9 @@ If either worldWidth and worldHeight is set to 0 it is assumed the world is infi
 					this.state = 'static';
 					this.following = undefined;
 					this.followingFunction = undefined;
+					if(def && (typeof def.top === 'number') && (typeof def.left === 'number')){
+						this.move(def.left, def.top);
+					}
 					break;
 				}
 				
@@ -376,10 +385,8 @@ If either worldWidth and worldHeight is set to 0 it is assumed the world is infi
 					def.begin = 0;
 				}
 
-			}
-		},
-		
-		methods: {
+			},
+			
 			move: function (newLeft, newTop){
 				var moved = this.moveLeft(newLeft);
 				moved = this.moveTop(newTop) || moved;

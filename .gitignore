@@ -5,3 +5,5 @@
 /.settings
 /.externalToolBuilders
 .project
+builds
+compressed

@@ -61,7 +61,7 @@ This component creates a DOM element associated with the entity. In addition to 
 				entity.trigger(message, e);
 				e.preventDefault();
 			};
-		} else if (message.length){
+		} else if (Array.isArray(message)){
 			return function(e){
 				for (var i = 0; i < message.length; i++){
 					entity.trigger(message[i], e);
@@ -146,15 +146,13 @@ This component creates a DOM element associated with the entity. In addition to 
 							}
 						}
 			
-						if(this.owner.entities){
+						if(this.owner.triggerEventOnChildren){
 							var message = this.handleRenderLoadMessage = {};
 							for (var item in resp){
 								message[item] = resp[item];
 							}
 							message.element = this.element;
-							for (var entity in this.owner.entities){
-								this.owner.entities[entity].trigger('handle-render-load', message);
-							}
+							this.owner.triggerEventOnChildren('handle-render-load', message);
 						}
 					}
 				};

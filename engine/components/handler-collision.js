@@ -25,6 +25,16 @@ This component checks for collisions between entities which typically have eithe
   - @param message.x (number) - Returns -1, 0, or 1 indicating on which side of this entity the collision occurred: left, neither, or right respectively.
   - @param message.y (number) - Returns -1, 0, or 1 indicating on which side of this entity the collision occurred: top, neither, or bottom respectively.
 
+## Methods
+- **getWorldEntities** - This method returns an object containing world entities grouped by collision type.
+  - @return entities (object) - a list of key/value pairs where the keys are collision types and the values are arrays of entities of that type.
+- **getWorldTerrain** - This method returns an entity representing the collision map of the world.
+  - @return entity ([[Entity]]) - An entity describing the collision map of the world.
+- **getEntityCollisions** - This method returns a list of collision objects describing soft collisions between an entity and a list of other entities.
+  - @param entity ([[Entity]]) - Required: The entity to test against the world.
+  - @param entities (Array of [[Entity]]) - Optional: The list of entities to check against. By default this is all the entities in the world.
+  - @return collisions (Array of Objects) - This is a list of collision objects describing the soft collisions.
+
 ## JSON Definition:
     {
       "type": "handler-collision"
@@ -138,106 +148,19 @@ This component checks for collisions between entities which typically have eithe
 		
 		events:{
 			"child-entity-added": function(entity){
-				this['add-collision-entity'](entity);
+				this.addCollisionEntity(entity);
 			},
 			
 			"add-collision-entity": function(entity){
-				var i = 0,
-				types = entity.collisionTypes,
-				solid = false,
-				soft  = false;
-				
-				if ((entity.type == 'tile-layer') || (entity.type == 'collision-layer')) { //TODO: probably should have these reference a required function on the obj, rather than an explicit type list since new collision entity map types could be created - DDD
-					this.terrain = entity;
-					this.updateLiveList = true;
-				} else {
-					if(types){
-						for(; i < types.length; i++){
-							if(!this.entitiesByType[types[i]]){
-								this.entitiesByType[types[i]] = [];
-								this.entitiesByTypeLive[types[i]] = [];
-							}
-							this.entitiesByType[types[i]][this.entitiesByType[types[i]].length] = entity;
-							if(entity.solidCollisions[types[i]].length && !entity.immobile){
-								solid = true;
-							}
-							if(entity.softCollisions[types[i]].length){
-								soft = true;
-							}
-						}
-						if(solid && !entity.immobile){
-							this.solidEntities[this.solidEntities.length] = entity;
-						}
-						if(soft){
-							this.softEntities[this.softEntities.length] = entity;
-						}
-//						if(entity.jumpThrough){ // Need to do jumpthrough last, since everything else needs to check against it's original position
-							this.allEntities[this.allEntities.length] = entity;
-//						} else {
-//							this.allEntities.splice(0, 0, entity);
-//						}
-						this.updateLiveList = true;
-					}
-				}
+				this.addCollisionEntity(entity);
 			},
 			
 			"child-entity-removed": function(entity){
-				this['remove-collision-entity'](entity);
+				this.removeCollisionEntity(entity);
 			},
 			
 			"remove-collision-entity": function(entity){
-				var x = 0,
-				i     = 0,
-				j	  = 0,
-				types = entity.collisionTypes,
-				solid = false,
-				soft  = false;
-
-				if (types) {
-					for(; i < types.length; i++){
-						for (x in this.entitiesByType[types[i]]) {
-							if(this.entitiesByType[types[i]][x] === entity){
-								this.entitiesByType[types[i]].splice(x, 1);
-								break;
-							}
-						}
-						if(entity.solidCollisions[types[i]].length){
-							solid = true;
-						}
-						if(entity.softCollisions[types[i]].length){
-							soft = true;
-						}
-					}
-					
-					if(solid){
-						for (x in this.solidEntities) {
-							if(this.solidEntities[x] === entity){
-								this.solidEntities.splice(x, 1);
-								break;
-							}
-						}
-					}
-			
-					if(soft){
-						for (x in this.softEntities) {
-							if(this.softEntities[x] === entity){
-								this.softEntities.splice(x, 1);
-								break;
-							}
-						}
-					}
-					
-					for (j = 0; j < this.allEntities.length; j++)
-					{
-						if (this.allEntities[j] === entity)
-						{
-							this.allEntities.splice(j,1);
-							break;
-						}
-					}
-					this.updateLiveList = true;
-				}
-				
+				this.removeCollisionEntity(entity);
 			},
 			
 			"check-collision-group": function(resp){
@@ -293,6 +216,96 @@ This component checks for collisions between entities which typically have eithe
 		},
 		
 		methods: {
+			addCollisionEntity: function(entity){
+				var i = 0,
+				types = entity.collisionTypes,
+				solid = false,
+				soft  = false;
+				
+				if ((entity.type == 'tile-layer') || (entity.type == 'collision-layer')) { //TODO: probably should have these reference a required function on the obj, rather than an explicit type list since new collision entity map types could be created - DDD
+					this.terrain = entity;
+					this.updateLiveList = true;
+				} else {
+					if(types){
+						for(; i < types.length; i++){
+							if(!this.entitiesByType[types[i]]){
+								this.entitiesByType[types[i]] = [];
+								this.entitiesByTypeLive[types[i]] = [];
+							}
+							this.entitiesByType[types[i]][this.entitiesByType[types[i]].length] = entity;
+							if(entity.solidCollisions[types[i]].length && !entity.immobile){
+								solid = true;
+							}
+							if(entity.softCollisions[types[i]].length){
+								soft = true;
+							}
+						}
+						if(solid && !entity.immobile){
+							this.solidEntities[this.solidEntities.length] = entity;
+						}
+						if(soft){
+							this.softEntities[this.softEntities.length] = entity;
+						}
+						this.allEntities[this.allEntities.length] = entity;
+						this.updateLiveList = true;
+					}
+				}
+			},
+
+			removeCollisionEntity: function(entity){
+				var x = 0,
+				i     = 0,
+				j	  = 0,
+				types = entity.collisionTypes,
+				solid = false,
+				soft  = false;
+
+				if (types) {
+					for(; i < types.length; i++){
+						for (x in this.entitiesByType[types[i]]) {
+							if(this.entitiesByType[types[i]][x] === entity){
+								this.entitiesByType[types[i]].splice(x, 1);
+								break;
+							}
+						}
+						if(entity.solidCollisions[types[i]].length){
+							solid = true;
+						}
+						if(entity.softCollisions[types[i]].length){
+							soft = true;
+						}
+					}
+					
+					if(solid){
+						for (x in this.solidEntities) {
+							if(this.solidEntities[x] === entity){
+								this.solidEntities.splice(x, 1);
+								break;
+							}
+						}
+					}
+			
+					if(soft){
+						for (x in this.softEntities) {
+							if(this.softEntities[x] === entity){
+								this.softEntities.splice(x, 1);
+								break;
+							}
+						}
+					}
+					
+					for (j = 0; j < this.allEntities.length; j++)
+					{
+						if (this.allEntities[j] === entity)
+						{
+							this.allEntities.splice(j,1);
+							break;
+						}
+					}
+					this.updateLiveList = true;
+				}
+			},
+			
 			checkCamera: (function(){
 				var groupSortBySize = function(a, b){
 					return a.collisionGroup.getAllEntities() - b.collisionGroup.getAllEntities();
@@ -929,13 +942,22 @@ This component checks for collisions between entities which typically have eithe
 			})(),
 			
 			checkSoftCollisions: function (resp)	{
+				var x = 0,
+				self  = this;
+
+				for(x = 0; x < this.softEntitiesLive.length; x++){
+					this.checkEntityForSoftCollisions(this.softEntitiesLive[x], this.getWorldEntities(), function(collision){
+						self.softEntitiesLive[x].trigger('hit-by-' + collision.type, collision);
+					});
+				}
+			},
+			
+			checkEntityForSoftCollisions: function(ent, entitiesByTypeLive, callback){
 				var otherEntity = undefined,
-				ent = undefined,
 				message = triggerMessage,
 				i   = 0,
 				j	= 0,
 				k	= 0,
-				x   = 0,
 				y   = 0,
 				z   = 0,
 				checkAABBCollision = AABBCollision,
@@ -944,49 +966,45 @@ This component checks for collisions between entities which typically have eithe
 				otherCollisionType = null,
 				shapes = null,
 				otherShapes = null,
-				collisionFound = false,
-				entitiesByTypeLive = this.getWorldEntities();
+				collisionFound = false;
 
 				message.x = 0;
 				message.y = 0;
-				
-				for(x = 0; x < this.softEntitiesLive.length; x++){
-					ent = this.softEntitiesLive[x];
-					for (i = 0; i < ent.collisionTypes.length; i++){
-						softCollisions = ent.softCollisions[ent.collisionTypes[i]];
-						for (y = 0; y < softCollisions.length; y++){
-							otherCollisionType = softCollisions[y];
-							otherEntities = entitiesByTypeLive[otherCollisionType]; 
-							if(otherEntities){
-								for(z = 0; z < otherEntities.length; z++){
-									collisionFound = false;
-									otherEntity = otherEntities[z];
-									if((otherEntity !== ent) && (checkAABBCollision(ent.getAABB(ent.collisionTypes[i]), otherEntity.getAABB(otherCollisionType)))) {
-										shapes = ent.getShapes(ent.collisionTypes[i]);
-										otherShapes = otherEntity.getShapes(otherCollisionType);
-										for (j = 0; j < shapes.length; j++)
+
+				for (i = 0; i < ent.collisionTypes.length; i++){
+					softCollisions = ent.softCollisions[ent.collisionTypes[i]];
+					for (y = 0; y < softCollisions.length; y++){
+						otherCollisionType = softCollisions[y];
+						otherEntities = entitiesByTypeLive[otherCollisionType]; 
+						if(otherEntities){
+							for(z = 0; z < otherEntities.length; z++){
+								collisionFound = false;
+								otherEntity = otherEntities[z];
+								if((otherEntity !== ent) && (checkAABBCollision(ent.getAABB(ent.collisionTypes[i]), otherEntity.getAABB(otherCollisionType)))) {
+									shapes = ent.getShapes(ent.collisionTypes[i]);
+									otherShapes = otherEntity.getShapes(otherCollisionType);
+									for (j = 0; j < shapes.length; j++)
+									{
+										for (k = 0; k < otherShapes.length; k++)
 										{
-											for (k = 0; k < otherShapes.length; k++)
-											{
-												if (shapeCollision(shapes[j], otherShapes[k])) {
-													//TML - We're only reporting the first shape we hit even though there may be multiple that we could be hitting.
-													message.entity = otherEntity;
-													message.type   = otherCollisionType;
-													message.myType = ent.collisionTypes[i];
-													message.shape  = otherShapes[k];
-													message.hitType= 'soft';
-													ent.trigger('hit-by-' + otherCollisionType, message);
-													message.debug = false;
-													
-													collisionFound = true;
-												}
-												if (collisionFound) {
-													break;
-												}
+											if (shapeCollision(shapes[j], otherShapes[k])) {
+												//TML - We're only reporting the first shape we hit even though there may be multiple that we could be hitting.
+												message.entity = otherEntity;
+												message.type   = otherCollisionType;
+												message.myType = ent.collisionTypes[i];
+												message.shape  = otherShapes[k];
+												message.hitType= 'soft';
+												
+												callback(message);
+												
+												collisionFound = true;
 											}
 											if (collisionFound) {
 												break;
 											}
+										}
+										if (collisionFound) {
+											break;
 										}
 									}
 								}
@@ -1012,6 +1030,21 @@ This component checks for collisions between entities which typically have eithe
 			
 			getWorldTerrain: function(){
 				return this.terrain;
+			},
+			
+			getEntityCollisions: function(entity, entities){
+				var collisions = [];
+				
+				this.checkEntityForSoftCollisions(entity, entities || this.entitiesByTypeLive, function(collision){
+					var i = '',
+					save  = {};
+					for(i in collision){
+						save[i] = collision[i];
+					}
+					collisions.push(save);
+				});
+				
+				return collisions;
 			}
 		}
 	});

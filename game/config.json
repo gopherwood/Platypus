@@ -16,6 +16,7 @@
 		{
 			"id": "production",                  // This is the id of the build and is matched to a folder name in the "builds/" folder. Build tools create this folder if needed.
 			"namespace": "PBS.KIDS.platformer",  // Optional namespace for the game - defaults to "PBS.KIDS.platformer"
+			"template": "template.html",         // Optional. HTML file describing the HTML template in which to place the game on compilation. Default is "template.html".
             "index": true,                       // Optional. If false, page is saved as the id + '.html' and resources are saved to a separate subfolder matching the id. Defaults to true, wherein the index and resources are in a single folder.
 			"cssCompression": true,
 			"jsCompression": true,
@@ -38,8 +39,8 @@
 		"assets": [ // Assets such as images and audio
 		
 			// Audio. Using different assets for browser compatability, as well as audio sprite for older iOS Safari compatability
-            {"id": "walk",           "src": {"ogg": "audio/walk.ogg",     	  "mp3": "audio/walk.mp3",     	   "m4aCombined": {"assetId": "combined", "src": "audio/combined.m4a", "data": {"offset": 3200,  "length": 330}}}},
-            {"id": "jump",           "src": {"ogg": "audio/jump.ogg",     	  "mp3": "audio/jump.mp3",     	   "m4aCombined": {"assetId": "combined", "src": "audio/combined.m4a", "data": {"offset": 1500,  "length": 250}}}},
+            {"id": "walk",           "src": {"ogg": "audio/walk.ogg",     	  "mp3": "audio/walk.mp3",     	   "m4aCombined": {"assetId": "combined", "src": "audio/combined.m4a", "data": {"offset": 3200,  "length": 330, "channels": 1}}}},
+            {"id": "jump",           "src": {"ogg": "audio/jump.ogg",     	  "mp3": "audio/jump.mp3",     	   "m4aCombined": {"assetId": "combined", "src": "audio/combined.m4a", "data": {"offset": 1500,  "length": 250, "channels": 1}}}},
 
 			// Images. Sprite sheets are evenly split into rows and columns. Could add support for sprite sheet definition files later.
 		    {"id": "buttons",    	 "src": "images/buttons.png"},
@@ -51,7 +52,7 @@
             {"id": "entities",       "src": "images/entities.png",     "data": {"rows": 2, "columns": 2}}
 		],
         "includes": [
-            {"id": "CreateJS",      "src": "http://code.createjs.com/createjs-2013.09.25.min.js"},
+            {"id": "CreateJS",      "src": "http://code.createjs.com/createjs-2013.12.12.min.js"},
             {"id": "Box2d",      	"src": "Box2dWeb-2.1.a.3.min.js"},
             {"id": "Browser",       "src": "../engine/browser.js"},
             {"id": "Main",          "src": "../engine/main.js"},
@@ -64,7 +65,8 @@
 		"classes": [
 			{"id": "Game",			  			"src": "../engine/game.js"},
             {"id": "ComponentFactory",			"src": "../engine/factory.js"},
-			{"id": "Entity",          			"src": "../engine/entity.js"},
+            {"id": "Messenger",                 "src": "../engine/messenger.js"},
+            {"id": "Entity",                    "src": "../engine/entity.js"},
 			{"id": "Scene",           			"src": "../engine/scene.js"},
 			{"id": "Collision-Shape", 			"src": "../engine/collision-shape.js"},
 			{"id": "Collision-Data-Container", 	"src": "../engine/collision-data-container.js"},
@@ -100,20 +102,14 @@
             {"id": "logic-directional-movement", "src": "../engine/components/logic-directional-movement.js"},
             {"id": "logic-gravity",              "src": "../engine/components/logic-gravity.js"},
             {"id": "logic-jump",                 "src": "../engine/components/logic-jump.js"},
-            {"id": "counter",           	     "src": "../engine/components/counter.js"},
-            {"id": "logic-timer",                "src": "../engine/components/logic-timer.js"},
             {"id": "logic-portal",	             "src": "../engine/components/logic-portal.js"},
 			{"id": "collision-basic",            "src": "../engine/components/collision-basic.js"},
 			{"id": "collision-tiles",            "src": "../engine/components/collision-tiles.js"},
 			{"id": "collision-box2d",            "src": "../engine/components/collision-box2d.js"},
             {"id": "logic-fps-counter",          "src": "../engine/components/logic-fps-counter.js"},
 			
-			// These are components that were designed specifically for this game. If you want to design your own components, copy the template in game/components/ec-template.js to get started!
-            {"id": "render-gui",              "src": "components/render-gui.js"},
-            {"id": "render-counter",          "src": "components/render-counter.js"},
-            {"id": "render-clock",            "src": "components/render-clock.js"},
-            {"id": "logic-hero",              "src": "components/logic-hero.js"},
-            {"id": "logic-gui",               "src": "components/logic-gui.js"}
+			// This component was designed specifically for this game. If you want to design your own components, copy the template in game/components/ec-template.js to get started!
+            {"id": "logic-hero",                 "src": "components/logic-hero.js"}
 		],
 		"entities": [ // JSON files describing entities
 		    {"id": "action-layer",    "src": "entities/action-layer.json"}, // If "src" key is included, this will be replaced by the JSON structure in the linked file.
@@ -132,7 +128,6 @@
             {"id": "button-right",    "src": "entities/button-right.json"},
             {"id": "button-mute",     "src": "entities/button-mute.json"},
 			{"id": "hero",            "src": "entities/hero.json"},
-            {"id": "block",           "src": "entities/block.json"},
             {"id": "progress-bar",    "src": "entities/progress-bar.json"},
             {"id": "level-portal",	  "src": "entities/level-portal.json"},
             {"id": "title-screen",    "src": "entities/title-screen.json"},
