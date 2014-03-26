@@ -1,23 +1,53 @@
 /**
-# COMPONENT **name-of-component**
-Summarize the purpose of this component here.
+# COMPONENT **handler-box2d**
+This component is designed to reside on a layer and creates and maintains the box2d world and sends ticks to objects that use box2d bodies. It also sets up the box2d contact listeners. This is generally used in conjunction with entities containing the collision-box2d component.
+
+**NOTE** This is an in-progress component and doesn't not yet allow users to create all possible box2d configurations.
 
 ## Dependencies
-- [[Required-Component]] - List other components that this component requires to function properly on an entity.
+- [[Box2dWeb-2.1.a.3.min.js]] - Requires Box2dWeb found here: https://code.google.com/p/box2dweb/downloads/list.
 
 ## Messages
 
 ### Listens for:
-- **received-message-label** - List all messages that this component responds to here.
-  - @param message-object-property (type) - under each message label, list message object properties that are optional or required.
+- **child-entity-added** - Listens for the entity-added message to capture references to objects with the 'connect-box2d' event to initialize and send 'handle-box2d' messages to later.
+  - @param entity (Object) - The object recently added.
+- **tick** - The tick event from the scene. Used to run the box2d World step and to update the entities with box2d bodies in them. 
+  - @param resp (Object) - Contains delta, the time that has passed since the last tick.
+- **camera-update** - Updated information from the camera used to update the debug camera state.
+  - @param cameraInfo (Object) - Information about the camera state.
 
 ### Local Broadcasts:
 - **local-message-label** - List all messages that are triggered by this component on this entity here.
   - @param message-object-property (type) - under each message label, list message object properties that are optional or required.
 
 ### Peer Broadcasts:
-- **peer-message-label** - List all messages that are triggered by this component on other entities here.
-  - @param message-object-property (type) - under each message label, list message object properties that are optional or required.
+- **handle-box2d** - Passing along the tick from the scene to the entities with box2d bodies.
+	- @param resp (Object) - The tick from the scene.
+- **connect-box2d** - Fired when a new entity with the connect-box2d event is added. This allows it to initialize and add it's body to the world.
+	- @param worldData (Object) - Contains worldData.world and worldData.drawScale. World is the Box2d world. Drawscale is the scale of the debugDrawCanvas and is used to map the box2d objects to the correct location in screenspace.
+- **begin-contact-[collision type A]-and-[collision type B]** - When a fixture with 'collision type A' begins contact with a fixture of 'collision type B' is fired. The message includes data about the contact.
+	- @param collisionData (Object) - Information about the contact. Contains the following:
+		contact (b2Contact) - The contact object from the collision.	
+    	thisFixture (b2Fixture) - Extracted from the contact object. The fixture belonging to the entity that we're triggering the message on.	
+    	otherFixture (b2Fixture) - Extracted from the contact object. The other fixture in the collision.	
+- **end-contact-[collision type A]-and-[collision type B]** - When a fixture with 'collision type A' ends contact with a fixture of 'collision type B' is fired. The message includes data about the contact.
+	- @param collisionData (Object) - Information about the contact. Contains the following:
+		contact (b2Contact) - The contact object from the collision.	
+    	thisFixture (b2Fixture) - Extracted from the contact object. The fixture belonging to the entity that we're triggering the message on.	
+    	otherFixture (b2Fixture) - Extracted from the contact object. The other fixture in the collision.
+- **pre-solve-[collision type A]-and-[collision type B]** - When a fixture in the body with 'collision type A' collides with a fixture of 'collision type B', this message is fired in the pre-solve state of collision resolution. The message includes data about the contact.
+	- @param collisionData (Object) - Information about the contact. Contains the following:
+		contact (b2Contact) - The contact object from the collision.
+    	oldManifold (b2Manifold) - The old contact manifold. 		
+    	thisFixture (b2Fixture) - Extracted from the contact object. The fixture belonging to the entity that we're triggering the message on.	
+    	otherFixture (b2Fixture) - Extracted from the contact object. The other fixture in the collision.
+- **post-solve-[collision type A]-and-[collision type B]** - When a fixture in the body with 'collision type A' collides with a fixture of 'collision type B', this message is received in the post-solve state of collision resolution. The message includes data about the contact.
+	- @param collisionData (Object) - Information about the contact. Contains the following:
+		contact (b2Contact) - The contact object from the collision.
+    	impulse (b2ContactImpulse) - The impulse of the contact.		
+    	thisFixture (b2Fixture) - Extracted from the contact object. The fixture belonging to the entity that we're triggering the message on.	
+    	otherFixture (b2Fixture) - Extracted from the contact object. The other fixture in the collision.
 
 ## JSON Definition
     {
@@ -36,6 +66,14 @@ Summarize the purpose of this component here.
 		b2PolygonShape 	= Box2D.Collision.Shapes.b2PolygonShape,       
 		b2CircleShape 	= Box2D.Collision.Shapes.b2CircleShape,       
 		b2DebugDraw 	= Box2D.Dynamics.b2DebugDraw;
+	var collisionData 		= {
+							"contact": null,
+							"thisFixture": null,
+							"otherFixture": null,
+							"oldManifold": null,
+							"impulse": null
+						  };
+	
 	return platformer.createComponentClass({	
 		id: 'handler-box2d',
 		
@@ -84,41 +122,81 @@ Summarize the purpose of this component here.
 								    	new b2Vec2(gravity.x, gravity.y),
 								    	allowSleep
 							    	);
-			/*
-			var fixDef = new b2FixtureDef;
-			fixDef.density = 1.0;
-			fixDef.friction = 0.5;
-			fixDef.restitution = 0.2;
-			 
-			var bodyDef = new b2BodyDef;
-			 
-			//create ground
-			bodyDef.type = b2Body.b2_staticBody;
-			bodyDef.position.x = 10.66;
-			bodyDef.position.y = 13;
-			fixDef.shape = new b2PolygonShape;
-			fixDef.shape.SetAsBox(10, 0.5);
-			this.world.CreateBody(bodyDef).CreateFixture(fixDef);
-			 
-			//create some objects
-			bodyDef.type = b2Body.b2_dynamicBody;
-			for(var i = 0; i < 10; ++i) {
-			    if(Math.random() > 0.5) {
-			       fixDef.shape = new b2PolygonShape;
-			       fixDef.shape.SetAsBox(
-						        		   Math.random() + 0.1, //half width
-						        		   Math.random() + 0.1 //half height
-			   						);
-			    } else {
-			    	fixDef.shape = new b2CircleShape(
-									              Math.random() + 0.1 //radius
-										           );
-			    }
-			    bodyDef.position.x = Math.random() * 10;
-			    bodyDef.position.y = Math.random() * 10;
-			    this.world.CreateBody(bodyDef).CreateFixture(fixDef);
-			}
-			*/
+			
+			var listener = new Box2D.Dynamics.b2ContactListener();
+		    listener.BeginContact = function(contact) {
+		    	var fixtureA = contact.GetFixtureA();
+		    	var fixtureB = contact.GetFixtureB();
+		    	var fixtureAType = fixtureA.GetUserData().collisionType;
+		    	var fixtureBType = fixtureB.GetUserData().collisionType;
+		    	var entityA = fixtureA.GetBody().GetUserData();
+		    	var entityB = fixtureB.GetBody().GetUserData();
+		    	
+		    	collisionData.contact 		= contact;
+		    	collisionData.oldManifold 	= null;
+		    	collisionData.impulse 		= null;
+		    	collisionData.thisFixture 	= fixtureA;
+		    	collisionData.otherFixture 	= fixtureB;
+		    	entityA.triggerEvent('begin-contact-' + fixtureAType + '-and-' + fixtureBType, collisionData);
+		    	collisionData.thisFixture 	= fixtureB;
+		    	collisionData.otherFixture 	= fixtureA;
+		    	entityB.triggerEvent('begin-contact-' + fixtureBType + '-and-' + fixtureAType, collisionData);
+		    };
+		    listener.EndContact = function(contact) {
+		    	var fixtureA = contact.GetFixtureA();
+		    	var fixtureB = contact.GetFixtureB();
+		    	var fixtureAType = fixtureA.GetUserData().collisionType;
+		    	var fixtureBType = fixtureB.GetUserData().collisionType;
+		    	var entityA = fixtureA.GetBody().GetUserData();
+		    	var entityB = fixtureB.GetBody().GetUserData();
+		    	
+		    	collisionData.contact 		= contact;
+		    	collisionData.oldManifold 	= null;
+		    	collisionData.impulse 		= null;
+		    	collisionData.thisFixture 	= fixtureA;
+		    	collisionData.otherFixture 	= fixtureB;
+		    	entityA.triggerEvent('end-contact-' + fixtureAType + '-and-' + fixtureBType, collisionData);
+		    	collisionData.thisFixture 	= fixtureB;
+		    	collisionData.otherFixture 	= fixtureA;
+		    	entityB.triggerEvent('end-contact-' + fixtureBType + '-and-' + fixtureAType, collisionData);
+		    };
+		    listener.PreSolve = function(contact, oldManifold) {
+		    	var fixtureA = contact.GetFixtureA();
+		    	var fixtureB = contact.GetFixtureB();
+		    	var fixtureAType = fixtureA.GetUserData().collisionType;
+		    	var fixtureBType = fixtureB.GetUserData().collisionType;
+		    	var entityA = fixtureA.GetBody().GetUserData();
+		    	var entityB = fixtureB.GetBody().GetUserData();
+		    	
+		    	collisionData.contact		= contact;
+		    	collisionData.oldManifold 	= oldManifold;
+		    	collisionData.impulse 		= null;
+		    	collisionData.thisFixture 	= fixtureA;
+		    	collisionData.otherFixture 	= fixtureB;
+		    	entityA.triggerEvent('pre-solve-' + fixtureAType + '-and-' + fixtureBType, collisionData);
+		    	collisionData.thisFixture 	= fixtureB;
+		    	collisionData.otherFixture 	= fixtureA;
+		    	entityB.triggerEvent('pre-solve-' + fixtureBType + '-and-' + fixtureAType, collisionData);
+		    };
+		    listener.PostSolve = function(contact, impulse) {
+		    	var fixtureA = contact.GetFixtureA();
+		    	var fixtureB = contact.GetFixtureB();
+		    	var fixtureAType = fixtureA.GetUserData().collisionType;
+		    	var fixtureBType = fixtureB.GetUserData().collisionType;
+		    	var entityA = fixtureA.GetBody().GetUserData();
+		    	var entityB = fixtureB.GetBody().GetUserData();
+		    	
+		    	collisionData.contact 		= contact;
+		    	collisionData.oldManifold 	= null;
+		    	collisionData.impulse 		= impulse;
+		    	collisionData.thisFixture 	= fixtureA;
+		    	collisionData.otherFixture 	= fixtureB;
+		    	entityA.triggerEvent('post-solve-' + fixtureAType + '-and-' + fixtureBType, collisionData);
+		    	collisionData.thisFixture 	= fixtureB;
+		    	collisionData.otherFixture 	= fixtureA;
+		    	entityB.triggerEvent('post-solve-' + fixtureBType + '-and-' + fixtureAType, collisionData);
+		    };
+		    this.world.SetContactListener(listener);
 		     
 			//setup debug canvas
 		    this.debugCanvas = document.createElement('canvas');
@@ -160,7 +238,7 @@ Summarize the purpose of this component here.
 				this.world.DrawDebugData();
 				this.world.ClearForces();
 				for (var x = 0; x < this.entities.length; x++){
-					this.entities[x].triggerEvent('handle-box2d');
+					this.entities[x].triggerEvent('handle-box2d', resp);
 				}
 			},
 			"camera-update": function(cameraInfo){
