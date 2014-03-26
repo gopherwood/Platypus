@@ -66,13 +66,14 @@ This component is designed to reside on a layer and creates and maintains the bo
 		b2PolygonShape 	= Box2D.Collision.Shapes.b2PolygonShape,       
 		b2CircleShape 	= Box2D.Collision.Shapes.b2CircleShape,       
 		b2DebugDraw 	= Box2D.Dynamics.b2DebugDraw;
-	var collisionData 		= {
-							"contact": null,
-							"thisFixture": null,
-							"otherFixture": null,
-							"oldManifold": null,
-							"impulse": null
-						  };
+	var collisionData = {
+		entity: null,
+		contact: null,
+		thisFixture: null,
+		otherFixture: null,
+		oldManifold: null,
+		impulse: null
+    };
 	
 	return platformer.createComponentClass({	
 		id: 'handler-box2d',
@@ -137,9 +138,11 @@ This component is designed to reside on a layer and creates and maintains the bo
 		    	collisionData.impulse 		= null;
 		    	collisionData.thisFixture 	= fixtureA;
 		    	collisionData.otherFixture 	= fixtureB;
+		    	collisionData.entity        = entityB;
 		    	entityA.triggerEvent('begin-contact-' + fixtureAType + '-and-' + fixtureBType, collisionData);
 		    	collisionData.thisFixture 	= fixtureB;
 		    	collisionData.otherFixture 	= fixtureA;
+		    	collisionData.entity        = entityA;
 		    	entityB.triggerEvent('begin-contact-' + fixtureBType + '-and-' + fixtureAType, collisionData);
 		    };
 		    listener.EndContact = function(contact) {
@@ -155,9 +158,11 @@ This component is designed to reside on a layer and creates and maintains the bo
 		    	collisionData.impulse 		= null;
 		    	collisionData.thisFixture 	= fixtureA;
 		    	collisionData.otherFixture 	= fixtureB;
+		    	collisionData.entity        = entityB;
 		    	entityA.triggerEvent('end-contact-' + fixtureAType + '-and-' + fixtureBType, collisionData);
 		    	collisionData.thisFixture 	= fixtureB;
 		    	collisionData.otherFixture 	= fixtureA;
+		    	collisionData.entity        = entityA;
 		    	entityB.triggerEvent('end-contact-' + fixtureBType + '-and-' + fixtureAType, collisionData);
 		    };
 		    listener.PreSolve = function(contact, oldManifold) {
@@ -173,9 +178,11 @@ This component is designed to reside on a layer and creates and maintains the bo
 		    	collisionData.impulse 		= null;
 		    	collisionData.thisFixture 	= fixtureA;
 		    	collisionData.otherFixture 	= fixtureB;
+		    	collisionData.entity        = entityB;
 		    	entityA.triggerEvent('pre-solve-' + fixtureAType + '-and-' + fixtureBType, collisionData);
 		    	collisionData.thisFixture 	= fixtureB;
 		    	collisionData.otherFixture 	= fixtureA;
+		    	collisionData.entity        = entityA;
 		    	entityB.triggerEvent('pre-solve-' + fixtureBType + '-and-' + fixtureAType, collisionData);
 		    };
 		    listener.PostSolve = function(contact, impulse) {
@@ -191,9 +198,11 @@ This component is designed to reside on a layer and creates and maintains the bo
 		    	collisionData.impulse 		= impulse;
 		    	collisionData.thisFixture 	= fixtureA;
 		    	collisionData.otherFixture 	= fixtureB;
+		    	collisionData.entity        = entityB;
 		    	entityA.triggerEvent('post-solve-' + fixtureAType + '-and-' + fixtureBType, collisionData);
 		    	collisionData.thisFixture 	= fixtureB;
 		    	collisionData.otherFixture 	= fixtureA;
+		    	collisionData.entity        = entityA;
 		    	entityB.triggerEvent('post-solve-' + fixtureBType + '-and-' + fixtureAType, collisionData);
 		    };
 		    this.world.SetContactListener(listener);
