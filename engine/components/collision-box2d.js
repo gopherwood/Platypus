@@ -413,11 +413,7 @@ This component creates and maintains a box2D body updating the entity position a
 				
 			},
 			"handle-box2d": function(resp) {
-				var pos = this.owner.body.GetPosition();
-				var angle = this.owner.body.GetAngle();
-				this.owner.x = pos.x * this.drawScale;
-				this.owner.y = pos.y * this.drawScale;
-				this.owner.orientation = angle;
+				this.matchEntityToBody();
 			}
 		},
 		
@@ -503,7 +499,13 @@ This component creates and maintains a box2D body updating the entity position a
 		},
 		
 		publicMethods: {// These are methods that are available on the entity.
-			
+			matchEntityToBody: function(position, orientation){ // Updates entity's position to reflect the Box2D position
+				var pos = position || this.owner.body.GetPosition();
+				var angle = orientation || this.owner.body.GetAngle();
+				this.owner.x = pos.x * this.drawScale;
+				this.owner.y = pos.y * this.drawScale;
+				this.owner.orientation = angle;
+			}
 		}
 	});
 })();
