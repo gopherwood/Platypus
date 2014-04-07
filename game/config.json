@@ -81,7 +81,6 @@
             {"id": "title-screen",    "src": "entities/title-screen.json"},
             {"id": "gui",    		  "src": "entities/gui.json"},
             {"id": "fps-counter",	  "src": "entities/fps-counter.json"},
-            {"id": "ball",	  		  "src": "entities/ball.json"},
             {"id": "fancy-box",	  	  "src": "entities/fancy-box.json"},
             {"id": "static-square-peg",	  	  "src": "entities/static-square-peg.json"},
             {"id": "static-round-peg",	  	  "src": "entities/static-round-peg.json"}

@@ -42,7 +42,8 @@ This component creates and maintains a box2D body updating the entity position a
 ### Local Broadcasts:
 - **[Message specified in definition]** - On receiving a 'begin-contact-', 'end-contact-', 'pre-solve-', or 'post-solve-' message, custom messages are triggered on the entity corresponding with the component definition.
   - @param collisionData (Object) - The nature of the information contained within depends on which contact message ('begin-contact-', 'end-contact-', 'pre-solve-', or 'post-solve-') this was redirected from. 
-
+- **box2d-body-initialized** - Called when the box2d body has been created and added to the world.
+  - @param body (Object) - The Box2d body object.
 ## JSON Definition
     {
         "type": "collision-box2d",
@@ -88,8 +89,8 @@ This component creates and maintains a box2D body updating the entity position a
         				//You can define shapes as rectangles, circles or polygons. Below is how to define a rectangle.
             			"halfWidth": 15, //Required if you're defining a rectangle. This is half the width of the rectangle. 
             			"halfHeight": 15 //Required if you're defining a rectangle. This is half the height of the rectangle.
-            			
-        			}
+        				"x": 2, //Optional offset from body's center. Both x and y default to 0.
+        				"y": 8 //Optional offset from body's center. Both x and y default to 0.
         		},{
         			"density": 		2,
         			"friction": 	2.5,
@@ -107,7 +108,9 @@ This component creates and maintains a box2D body updating the entity position a
         			"density": 		3,
         			"shape": {
         				//You can define shapes as rectangles, circles or polygons. Below is how to define a circle.
-        				"radius": 10 //Required if you are defining a circle.
+        				"radius": 10, //Required if you are defining a circle.
+        				"x": 2, //Optional offset from body's center. Both x and y default to 0.
+        				"y": 8 //Optional offset from body's center. Both x and y default to 0.
         			}
         		}
         	]
@@ -160,6 +163,8 @@ This component creates and maintains a box2D body updating the entity position a
         ]
 
     }
+    
+Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 */
 (function(){
 	var b2Vec2 				= Box2D.Common.Math.b2Vec2,       
@@ -197,42 +202,42 @@ This component creates and maintains a box2D body updating the entity position a
 			this.owner.body = null;
 			this.world = null;
 			this.drawScale = 1;
-			
+			this.owner.orientation = this.owner.orientation || 0;
+			this.connectedEntities = [];
 			var resolutionCalls = null;
 			var collisionType = null;
-			if(definition.resolution) {
-				for (var x in definition.resolution) {
+			
+			var resolution = this.owner.resolution || definition.resolution || null;
+			
+			if(resolution) {
+				for (var x in resolution) {
 					collisionType = x;
 					if (collisionType == 'default') {
 						collisionType = this.owner.type;
 					}
-					for (var y in definition.resolution[x]) {
+					for (var y in resolution[x]) {
 						if(y == 'beginContact') {
-							resolutionCalls = definition.resolution[x][y];
+							resolutionCalls = resolution[x][y];
 							for (var z in resolutionCalls) {
-								this.addListener('begin-contact-' + collisionType + '-and-' + z);
-								this['begin-contact-' + collisionType + '-and-' + z] = entityBroadcast(resolutionCalls[z]);
+								this.addEventListener('begin-contact-' + collisionType + '-and-' + z, entityBroadcast(resolutionCalls[z]));
 							}
 						}
 						if(y == 'endContact') {
-							resolutionCalls = definition.resolution[x][y];
+							resolutionCalls = resolution[x][y];
 							for (var z in resolutionCalls) {
-								this.addListener('end-contact-' + collisionType + '-and-' + z);
-								this['end-contact-' + collisionType + '-and-' + z] = entityBroadcast(resolutionCalls[z]);
+								this.addEventListener('end-contact-' + collisionType + '-and-' + z, entityBroadcast(resolutionCalls[z]));
 							}
 						}
 						if(y == 'preSolve') {
-							resolutionCalls = definition.resolution[x][y];
+							resolutionCalls = resolution[x][y];
 							for (var z in resolutionCalls) {
-								this.addListener('pre-solve-' + collisionType + '-and-' + z);
-								this['pre-solve-' + collisionType + '-and-' + z] = entityBroadcast(resolutionCalls[z]);
+								this.addEventListener('pre-solve-' + collisionType + '-and-' + z, entityBroadcast(resolutionCalls[z]));
 							}
 						}
 						if(y == 'postSolve') {
-							resolutionCalls = definition.resolution[x][y];
+							resolutionCalls = resolution[x][y];
 							for (var z in resolutionCalls) {
-								this.addListener('post-solve-' + collisionType + '-and-' + z);
-								this['post-solve-' + collisionType + '-and-' + z] = entityBroadcast(resolutionCalls[z]);
+								this.addEventListener('post-solve-' + collisionType + '-and-' + z, entityBroadcast(resolutionCalls[z]));
 							}
 						}
 					}
@@ -258,7 +263,8 @@ This component creates and maintains a box2D body updating the entity position a
 				var jointData = null;
 				if(this.def.body) {
 					//bodyDef = new b2BodyDef;
-					bodyDef.userData = this.owner;
+					bodyDef.userData = {};
+					bodyDef.userData.entity = this.owner;
 					if (this.def.body.type == 'static') {
 						bodyDef.type = b2Body.b2_staticBody;
 					} else if (this.def.body.type == 'kinematic') {
@@ -266,6 +272,10 @@ This component creates and maintains a box2D body updating the entity position a
 					} else {
 						//default to dynamic
 						bodyDef.type = b2Body.b2_dynamicBody;
+					}
+					
+					if (typeof this.def.body.allowSleep !== 'undefined') {
+						bodyDef.allowSleep = this.def.body.allowSleep;
 					}
 					
 					//TODO: Positions from TILED probably need to be scaled....
@@ -278,7 +288,6 @@ This component creates and maintains a box2D body updating the entity position a
 					}
 					this.owner.x = bodyDef.position.x * this.drawScale;
 					this.owner.y = bodyDef.position.y * this.drawScale;
-					
 					this.owner.body = this.world.CreateBody(bodyDef);
 					//setUser
 					
@@ -364,6 +373,9 @@ This component creates and maintains a box2D body updating the entity position a
 						
 						if(def.shape.radius) {
 							fixDef.shape = new b2CircleShape(def.shape.radius / this.drawScale);
+							if(def.shape.x || def.shape.y){
+								fixDef.shape.SetLocalPosition(new b2Vec2((def.shape.x || 0) / this.drawScale, (def.shape.y || 0) / this.drawScale));
+							}
 						} else if (def.shape.points) {
 			                vectors = [];
 							for (var c = 0; c < def.shape.points.length; c++) {
@@ -375,7 +387,11 @@ This component creates and maintains a box2D body updating the entity position a
 							fixDef.shape.SetAsArray(vectors, vectors.length);
 						} else if (def.shape.halfWidth && def.shape.halfHeight) {
 							fixDef.shape = new b2PolygonShape();
-							fixDef.shape.SetAsBox(def.shape.halfWidth / this.drawScale, def.shape.halfHeight / this.drawScale);
+							if(def.shape.x || def.shape.y){
+								fixDef.shape.SetAsOrientedBox(def.shape.halfWidth / this.drawScale, def.shape.halfHeight / this.drawScale, new b2Vec2((def.shape.x || 0) / this.drawScale, (def.shape.y || 0) / this.drawScale));
+							} else {
+								fixDef.shape.SetAsBox(def.shape.halfWidth / this.drawScale, def.shape.halfHeight / this.drawScale);
+							}
 						}
 						this.owner.body.CreateFixture(fixDef);
 					}
@@ -411,16 +427,58 @@ This component creates and maintains a box2D body updating the entity position a
 					}
 				}
 				
+				this.owner.triggerEvent('box2d-body-initialized', this.owner.body);
+			},
+			"handle-box2d-pre-step": function(resp) {
+				var bodyPos = this.owner.body.GetPosition();
+				var pos = null;
+				if (this.owner.x / this.drawScale != bodyPos.x || this.owner.y / this.drawScale != bodyPos.y || this.owner.orientation != this.owner.body.GetAngle()) {
+					pos = new b2Vec2(this.owner.x / this.drawScale, this.owner.y / this.drawScale);
+					this.owner.body.SetPosition(pos);
+					this.owner.body.SetAngle(this.owner.orientation);
+				}
 			},
 			"handle-box2d": function(resp) {
 				this.matchEntityToBody();
+			},
+			"add-collision-listener": function(specification) {
+				/*
+				 * NOT TESTED AND I'M NOT SURE IT'S WORTH KEEPING.
+				 * 
+				 * TODO: Document this!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+					specification.when
+					specification.thisType
+					specification.otherType
+					specification.message
+				*/
+				var spec = specification;
+				var thisType = spec.thisType || this.owner.type;
+				
+				if(spec.when == 'beginContact') {
+					this.addEventListener('begin-contact-' + thisType + '-and-' + spec.otherType, entityBroadcast(spec.message));
+				}
+				if(spec.when == 'endContact') {
+					this.addEventListener('end-contact-' + thisType + '-and-' + spec.otherType, entityBroadcast(spec.message));
+				}
+				if(spec.when == 'preSolve') {
+					this.addEventListener('pre-solve-' + thisType + '-and-' + spec.otherType, entityBroadcast(spec.message));
+				}
+				if(spec.when == 'postSolve') {
+					this.addEventListener('post-solve-' + thisType + '-and-' + spec.otherType, entityBroadcast(spec.message));
+				}
 			}
 		},
 		
 		methods: {// These are methods that are called by this component.
 			destroy: function() {
-				this.def = null;
+				this.world.DestroyBody(this.owner.body);
+				this.owner.body = null;
 				this.world = null;
+				this.def = null;
+				for(var i = 0; i < this.connectedEntities.length; i++){
+					this.owner.parent.removeEntity(this.connectedEntities[i]);
+				}
+				this.connectedEntities.length = 0;
 			},
 			createRevoluteJoint: function(jointData) {
 				var jointDef = null;
@@ -430,6 +488,7 @@ This component creates and maintains a box2D body updating the entity position a
 				var offset = null;
 				var entityProperties = null;
 				var other = null;
+				var joint = null;
 				
 				entityProperties = {};
 				for(var x in jointData.object.properties) {
@@ -494,7 +553,12 @@ This component creates and maintains a box2D body updating the entity position a
 					}
 				}
 				
-				this.world.CreateJoint(jointDef);
+				joint = this.world.CreateJoint(jointDef);
+				
+				this.owner.triggerEvent('joint-attached', joint);
+				other.triggerEvent('joint-attached', joint);
+				
+				this.connectedEntities.push(other);
 			}
 		},
 		

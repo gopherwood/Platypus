@@ -54,6 +54,8 @@ This component is designed to reside on a layer and creates and maintains the bo
       "type": "name-of-component"
       // List all additional parameters and their possible values here.
     }
+    
+Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 */
 (function(){
 	var b2Vec2 			= Box2D.Common.Math.b2Vec2,       
@@ -79,7 +81,7 @@ This component is designed to reside on a layer and creates and maintains the bo
 		id: 'handler-box2d',
 		
 		constructor: function(definition){
-			var gravity = definition.gravity || {x: 0, y: 10};
+			var gravity = definition.gravity || {x: 0, y: 0};
 			var allowSleep = (typeof definition.allowSleep !== 'undefined') ? definition.allowSleep : true;
 			this.simulationFrequency = 	definition.simulationFrequency 	|| 1 / platformer.game.settings.global.fps || 1/ 60;
 			this.velocityIterations = 	definition.velocityIterations 	|| 10;
@@ -130,8 +132,8 @@ This component is designed to reside on a layer and creates and maintains the bo
 		    	var fixtureB = contact.GetFixtureB();
 		    	var fixtureAType = fixtureA.GetUserData().collisionType;
 		    	var fixtureBType = fixtureB.GetUserData().collisionType;
-		    	var entityA = fixtureA.GetBody().GetUserData();
-		    	var entityB = fixtureB.GetBody().GetUserData();
+		    	var entityA = fixtureA.GetBody().GetUserData().entity;
+		    	var entityB = fixtureB.GetBody().GetUserData().entity;
 		    	
 		    	collisionData.contact 		= contact;
 		    	collisionData.oldManifold 	= null;
@@ -150,8 +152,8 @@ This component is designed to reside on a layer and creates and maintains the bo
 		    	var fixtureB = contact.GetFixtureB();
 		    	var fixtureAType = fixtureA.GetUserData().collisionType;
 		    	var fixtureBType = fixtureB.GetUserData().collisionType;
-		    	var entityA = fixtureA.GetBody().GetUserData();
-		    	var entityB = fixtureB.GetBody().GetUserData();
+		    	var entityA = fixtureA.GetBody().GetUserData().entity;
+		    	var entityB = fixtureB.GetBody().GetUserData().entity;
 		    	
 		    	collisionData.contact 		= contact;
 		    	collisionData.oldManifold 	= null;
@@ -170,8 +172,8 @@ This component is designed to reside on a layer and creates and maintains the bo
 		    	var fixtureB = contact.GetFixtureB();
 		    	var fixtureAType = fixtureA.GetUserData().collisionType;
 		    	var fixtureBType = fixtureB.GetUserData().collisionType;
-		    	var entityA = fixtureA.GetBody().GetUserData();
-		    	var entityB = fixtureB.GetBody().GetUserData();
+		    	var entityA = fixtureA.GetBody().GetUserData().entity;
+		    	var entityB = fixtureB.GetBody().GetUserData().entity;
 		    	
 		    	collisionData.contact		= contact;
 		    	collisionData.oldManifold 	= oldManifold;
@@ -190,8 +192,8 @@ This component is designed to reside on a layer and creates and maintains the bo
 		    	var fixtureB = contact.GetFixtureB();
 		    	var fixtureAType = fixtureA.GetUserData().collisionType;
 		    	var fixtureBType = fixtureB.GetUserData().collisionType;
-		    	var entityA = fixtureA.GetBody().GetUserData();
-		    	var entityB = fixtureB.GetBody().GetUserData();
+		    	var entityA = fixtureA.GetBody().GetUserData().entity;
+		    	var entityB = fixtureB.GetBody().GetUserData().entity;
 		    	
 		    	collisionData.contact 		= contact;
 		    	collisionData.oldManifold 	= null;
@@ -208,26 +210,32 @@ This component is designed to reside on a layer and creates and maintains the bo
 		    this.world.SetContactListener(listener);
 		     
 			//setup debug canvas
-		    this.debugCanvas = document.createElement('canvas');
-		    this.debugCanvas.id = debugCanvasSettings.id;
-		    this.ctx = this.debugCanvas.getContext('2d');
-		   	
-		    this.owner.rootElement.appendChild(this.debugCanvas);
-		    
-		    //setup debug draw
-			this.debugDraw = new b2DebugDraw();
-			this.debugDraw.SetSprite(document.getElementById(debugCanvasSettings.id).getContext("2d"));
-			this.debugDraw.SetDrawScale(debugCanvasSettings.drawScale);
-			this.debugDraw.SetFillAlpha(debugCanvasSettings.fillAlpha);
-			this.debugDraw.SetLineThickness(debugCanvasSettings.lineThickness);
-			this.debugDraw.SetFlags(debugCanvasSettings.flags);
-			this.world.SetDebugDraw(this.debugDraw);
+		    if (platformer.settings.debug) {
+			    this.debugCanvas = document.createElement('canvas');
+			    this.debugCanvas.style.pointerEvents = 'none';
+			    this.debugCanvas.id = debugCanvasSettings.id;
+			    this.ctx = this.debugCanvas.getContext('2d');
+			   	
+			    this.owner.rootElement.appendChild(this.debugCanvas);
+			    
+			    //setup debug draw
+				this.debugDraw = new b2DebugDraw();
+				this.debugDraw.SetSprite(document.getElementById(debugCanvasSettings.id).getContext("2d"));
+				this.debugDraw.SetDrawScale(debugCanvasSettings.drawScale);
+				this.debugDraw.SetFillAlpha(debugCanvasSettings.fillAlpha);
+				this.debugDraw.SetLineThickness(debugCanvasSettings.lineThickness);
+				this.debugDraw.SetFlags(debugCanvasSettings.flags);
+				this.world.SetDebugDraw(this.debugDraw);
+		    }
 		},
 
 		events: {// These are messages that this component listens for
 			"child-entity-added": function(entity){
 				var messageIds = entity.getMessageIds(); 
-				var worldData  = { "world": this.world, "drawScale": this.debugDraw.GetDrawScale()};
+				var worldData  = { 
+						"world": this.world, 
+						"drawScale": (this.debugDraw) ? this.debugDraw.GetDrawScale() : 30
+				};
 				
 				for (var x = 0; x < messageIds.length; x++)
 				{
@@ -238,7 +246,10 @@ This component is designed to reside on a layer and creates and maintains the bo
 					}
 				}
 			},
-			"tick": function(resp) {
+			"check-collision-group": function(resp) {
+				for (var x = 0; x < this.entities.length; x++){
+					this.entities[x].triggerEvent('handle-box2d-pre-step', resp);
+				}
 				this.world.Step(
 									this.simulationFrequency,
 					               	this.velocityIterations,
