@@ -8,19 +8,17 @@
    </properties>
   </tile>
  </tileset>
- <layer name="background" width="30" height="10">
-  <data encoding="base64" compression="zlib">
-   eJxjZGBgYBzFo5gCzI2G6WkvKxCzDYC9nEDMRWd7RzEDAwCURQGX
-  </data>
- </layer>
+ <imagelayer name="background" width="30" height="10">
+  <image source="../images/background.jpg"/>
+ </imagelayer>
  <layer name="action" width="30" height="10">
   <data encoding="base64" compression="zlib">
-   eJxjYmBoYKAxYAJiZjTMQWtLIXY0sANpZDxqL2EAja8GJiLTBlCdA1D9ARhmAeojxl5YusBlD6nu4CDSXmoDkL0skDDASOe0xEA7D6DH93DHAMpyDGE=
+   eJxjYmBoYKAxYAJiZjTMQWtLIXY0sANpZDxqL2EAja8GJiLTBlCdA1D9ARhmAeojxl5YusBlDzHu4AZiViBmY4D4nx7hDLOXE4i5oPayQMIAI53TEgPtPIAe38MdAwAgeQyV
   </data>
  </layer>
  <objectgroup name="entities" width="30" height="10">
   <object gid="12" x="144" y="504"/>
-  <object type="level-portal" x="1872" y="360" width="144" height="144">
+  <object type="level-portal" x="1944" y="360" width="144" height="144">
    <properties>
     <property name="destination" value="menu"/>
    </properties>

@@ -46,7 +46,8 @@
 		    {"id": "buttons",    	 "src": "images/buttons.png"},
 			{"id": "mookie",         "src": "images/mookie.png",       "data": {"rows": 4, "columns": 4}},
             {"id": "game-sprites",   "src": "images/game-sprites.png", "data": {"rows": 4, "columns": 4}},
-            {"id": "title-screen",   "src": "images/title-screen.png"}
+            {"id": "title-screen",   "src": "images/title-screen.png"},
+            {"id": "background",     "src": "images/background.jpg"}
 		],
         "includes": [
             "../engine/main.js",
