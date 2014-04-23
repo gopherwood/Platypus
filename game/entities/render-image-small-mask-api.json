@@ -1,0 +1,14 @@
+{
+	"id": "render-image-small-mask-api",
+	"components":[{
+		"type": "render-image",
+		"image": ["platypus"],
+		"scaleX": 0.25,
+		"scaleY": 0.25,
+		"mask": "dc(0,0,100)"
+	}],
+	"properties": {
+	    "x": 514,
+	    "y": 220
+	}
+}

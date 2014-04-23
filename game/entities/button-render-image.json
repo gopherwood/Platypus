@@ -1,19 +1,15 @@
-/*
- * 
- */
 {
-	"id": "button-play-game",
+	"id": "button-render-image",
 	"components":[
 		{
 		    "type": "dom-element",
-		    "element": "div",
-		    "innerHTML": "render-tiles",
-		    "className": "menu-button",
+		    "innerHTML": "render-image",
+		    "className": "menu-button render-image",
 		    "onmouseup": "new-scene",
 		    "ontouchend": "new-scene"
 		},{
 		    "type": "change-scene",
-		    "scene": "scene-level-1",
+		    "scene": "render-image",
 		    "transition": "fade-to-black"
         }
 	]

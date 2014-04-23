@@ -1,0 +1,11 @@
+{
+	"id": "render-image-basic",
+	"components":[{
+		"type": "render-image",
+		"image": ["platypus"]
+	}],
+	"properties":{
+	    "x": 0,
+	    "y": 0
+	}
+}

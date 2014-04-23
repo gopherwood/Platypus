@@ -1,0 +1,15 @@
+{
+	"id": "render-image-small-reg-bottom",
+	"components":[{
+		"type": "render-image",
+		"image": ["platypus"],
+		"scaleX": 0.25,
+		"scaleY": 0.25,
+        "regX": 172,
+        "regY": 439
+	}],
+	"properties": {
+	    "x": 686,
+	    "y": 110
+	}
+}

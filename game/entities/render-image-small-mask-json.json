@@ -1,0 +1,17 @@
+{
+	"id": "render-image-small-mask-json",
+	"components":[{
+		"type": "render-image",
+		"image": ["platypus"],
+		"scaleX": 0.25,
+		"scaleY": 0.25,
+		"mask": {
+		    "shape": "circle",
+		    "radius": 100
+		}
+	}],
+	"properties": {
+	    "x": 600,
+	    "y": 220
+	}
+}

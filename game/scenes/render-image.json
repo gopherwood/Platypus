@@ -1,0 +1,54 @@
+{
+	"layers":[{
+        "id": "action-layer",
+        "components": [
+            {"type": "handler-controller"},
+            {"type": "handler-logic"},
+            {"type": "camera", "width": 960},
+            {"type": "handler-render-createjs"},
+            {
+                "type": "entity-container",
+                "entities": [
+                
+                // ORIGINAL:
+                {
+                    "type": "render-image-basic"
+                },
+                
+                // SCALING:
+                {
+                    "type": "render-image-basic",
+                    "properties": {
+                        "scaleX": 0.25,
+                        "x": 343
+                    }
+                },{
+                    "type": "render-image-basic",
+                    "properties": {
+                        "scaleY": 0.25,
+                        "y": 439
+                    }
+                },{
+                    "type": "render-image-basic",
+                    "properties": {
+                        "scaleX": 0.25,
+                        "scaleY": 0.25,
+                        "x": 343,
+                        "y": 439
+                    }
+                },
+                
+                // REGISTRATION (registration point on original source image)
+                {
+                    "type": "render-image-small-reg-top"
+                },{
+                    "type": "render-image-small-reg-center"
+                },{
+                    "type": "render-image-small-reg-bottom"
+                }
+                
+                ]
+            }
+        ]
+	}]
+}

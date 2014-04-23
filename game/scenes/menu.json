@@ -9,7 +9,8 @@
 				{"type": "entity-container",
 					"entities": [
                         {"type": "title-screen"},
-                        {"type": "button-play-game"}
+                        {"type": "button-play-game"},
+                        {"type": "button-render-image"}
 					]
 				}
 			]

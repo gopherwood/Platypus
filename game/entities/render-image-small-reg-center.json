@@ -1,0 +1,15 @@
+{
+	"id": "render-image-small-reg-center",
+	"components":[{
+		"type": "render-image",
+		"image": ["platypus"],
+		"scaleX": 0.25,
+		"scaleY": 0.25,
+        "regX": 172,
+        "regY": 220
+	}],
+	"properties": {
+	    "x": 600,
+	    "y": 110
+	}
+}
