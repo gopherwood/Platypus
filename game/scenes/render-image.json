@@ -5,8 +5,10 @@
             {"type": "handler-controller"},
             {"type": "handler-logic"},
             {"type": "camera", "width": 960},
-            {"type": "handler-render-createjs"},
             {
+                "type": "handler-render-createjs",
+                "autoClear": true
+            },{
                 "type": "entity-container",
                 "entities": [
                 
@@ -45,6 +47,20 @@
                     "type": "render-image-small-reg-center"
                 },{
                     "type": "render-image-small-reg-bottom"
+                },
+                
+                // MASKS (what appears)
+                {
+                    "type": "render-image-small-mask-api"
+                },{
+                    "type": "render-image-small-mask-json"
+                },
+                
+                // PINS (multiple images pinned together)
+                {
+                    "type": "render-image-small-pin"
+                },{
+                    "type": "render-image-small-pin-rotated"
                 }
                 
                 ]

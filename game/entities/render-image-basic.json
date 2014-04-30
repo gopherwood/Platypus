@@ -2,7 +2,11 @@
 	"id": "render-image-basic",
 	"components":[{
 		"type": "render-image",
-		"image": ["platypus"]
+		"image": ["platypus"],
+		"source": {
+            "width":  343,
+            "height": 691  
+        }
 	}],
 	"properties":{
 	    "x": 0,

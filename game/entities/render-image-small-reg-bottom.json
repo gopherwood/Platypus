@@ -3,6 +3,10 @@
 	"components":[{
 		"type": "render-image",
 		"image": ["platypus"],
+        "source": {
+            "width":  343,
+            "height": 691  
+        },
 		"scaleX": 0.25,
 		"scaleY": 0.25,
         "regX": 172,
