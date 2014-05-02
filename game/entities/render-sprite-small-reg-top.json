@@ -1,8 +1,8 @@
 {
-	"id": "render-image-small-reg-top",
+	"id": "render-sprite-small-reg-top",
 	"components":[{
-		"type": "render-image",
-		"image": ["platypus"],
+		"type": "render-sprite",
+		"image": "platypus",
         "source": {
             "width":  343,
             "height": 691  

@@ -14,24 +14,24 @@
                 
                 // ORIGINAL:
                 {
-                    "type": "render-image-basic"
+                    "type": "render-sprite-basic"
                 },
                 
                 // SCALING:
                 {
-                    "type": "render-image-basic",
+                    "type": "render-sprite-basic",
                     "properties": {
                         "scaleX": 0.25,
                         "x": 343
                     }
                 },{
-                    "type": "render-image-basic",
+                    "type": "render-sprite-basic",
                     "properties": {
                         "scaleY": 0.25,
                         "y": 439
                     }
                 },{
-                    "type": "render-image-basic",
+                    "type": "render-sprite-basic",
                     "properties": {
                         "scaleX": 0.25,
                         "scaleY": 0.25,
@@ -42,25 +42,25 @@
                 
                 // REGISTRATION (registration point on original source image)
                 {
-                    "type": "render-image-small-reg-top"
+                    "type": "render-sprite-small-reg-top"
                 },{
-                    "type": "render-image-small-reg-center"
+                    "type": "render-sprite-small-reg-center"
                 },{
-                    "type": "render-image-small-reg-bottom"
+                    "type": "render-sprite-small-reg-bottom"
                 },
                 
                 // MASKS (what appears)
                 {
-                    "type": "render-image-small-mask-api"
+                    "type": "render-sprite-small-mask-api"
                 },{
-                    "type": "render-image-small-mask-json"
+                    "type": "render-sprite-small-mask-json"
                 },
                 
                 // PINS (multiple images pinned together)
                 {
-                    "type": "render-image-small-pin"
+                    "type": "render-sprite-small-pin"
                 },{
-                    "type": "render-image-small-pin-rotated"
+                    "type": "render-sprite-small-pin-rotated"
                 }
                 
                 ]

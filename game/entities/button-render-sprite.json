@@ -1,15 +1,15 @@
 {
-	"id": "button-render-image",
+	"id": "button-render-sprite",
 	"components":[
 		{
 		    "type": "dom-element",
-		    "innerHTML": "render-image",
-		    "className": "menu-button render-image",
+		    "innerHTML": "render-sprite",
+		    "className": "menu-button render-sprite",
 		    "onmouseup": "new-scene",
 		    "ontouchend": "new-scene"
 		},{
 		    "type": "change-scene",
-		    "scene": "render-image",
+		    "scene": "render-sprite",
 		    "transition": "fade-to-black"
         }
 	]

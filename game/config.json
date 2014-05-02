@@ -72,19 +72,19 @@
             {"id": "button-jump-right", "src": "entities/button-jump-right.json"},
             {"id": "button-left",     "src": "entities/button-left.json"},
             {"id": "button-play-game","src": "entities/button-play-game.json"},
-            {"id": "button-render-image","src": "entities/button-render-image.json"},
+            {"id": "button-render-sprite","src": "entities/button-render-sprite.json"},
             {"id": "button-right",    "src": "entities/button-right.json"},
             {"id": "button-mute",     "src": "entities/button-mute.json"},
 			{"id": "hero",            "src": "entities/hero.json"},
             {"id": "progress-bar",    "src": "entities/progress-bar.json"},
-            {"id": "render-image-basic",             "src": "entities/render-image-basic.json"},
-            {"id": "render-image-small-mask-api",    "src": "entities/render-image-small-mask-api.json"},
-            {"id": "render-image-small-mask-json",   "src": "entities/render-image-small-mask-json.json"},
-            {"id": "render-image-small-pin",         "src": "entities/render-image-small-pin.json"},
-            {"id": "render-image-small-pin-rotated", "src": "entities/render-image-small-pin-rotated.json"},
-            {"id": "render-image-small-reg-bottom",  "src": "entities/render-image-small-reg-bottom.json"},
-            {"id": "render-image-small-reg-center",  "src": "entities/render-image-small-reg-center.json"},
-            {"id": "render-image-small-reg-top",     "src": "entities/render-image-small-reg-top.json"},
+            {"id": "render-sprite-basic",             "src": "entities/render-sprite-basic.json"},
+            {"id": "render-sprite-small-mask-api",    "src": "entities/render-sprite-small-mask-api.json"},
+            {"id": "render-sprite-small-mask-json",   "src": "entities/render-sprite-small-mask-json.json"},
+            {"id": "render-sprite-small-pin",         "src": "entities/render-sprite-small-pin.json"},
+            {"id": "render-sprite-small-pin-rotated", "src": "entities/render-sprite-small-pin-rotated.json"},
+            {"id": "render-sprite-small-reg-bottom",  "src": "entities/render-sprite-small-reg-bottom.json"},
+            {"id": "render-sprite-small-reg-center",  "src": "entities/render-sprite-small-reg-center.json"},
+            {"id": "render-sprite-small-reg-top",     "src": "entities/render-sprite-small-reg-top.json"},
             {"id": "level-portal",	  "src": "entities/level-portal.json"},
             {"id": "title-screen",    "src": "entities/title-screen.json"},
             {"id": "fps-counter",	  "src": "entities/fps-counter.json"}
@@ -92,7 +92,7 @@
 		"scenes": [ // JSON files describing scenes
             {"id": "load",        "src": "scenes/load.json"}, // If "src" key is included, this will be replaced by the JSON structure in the linked file.
             {"id": "menu",        "src": "scenes/menu.json"},
-            {"id": "render-image",  "src": "scenes/render-image.json"},
+            {"id": "render-sprite",  "src": "scenes/render-sprite.json"},
 			{"id": "scene-level-1", "src": "scenes/scene-level-1.json"}
 		],
 		"levels": [ // JSON files describing levels

@@ -10,7 +10,7 @@
 					"entities": [
                         {"type": "title-screen"},
                         {"type": "button-play-game"},
-                        {"type": "button-render-image"}
+                        {"type": "button-render-sprite"}
 					]
 				}
 			]

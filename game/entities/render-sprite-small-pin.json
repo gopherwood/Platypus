@@ -1,8 +1,8 @@
 {
-	"id": "render-image-small-pin-rotated",
+	"id": "render-sprite-small-pin",
 	"components":[{
-        "type": "render-image",
-        "image": ["platypus"],
+        "type": "render-sprite",
+        "image": "platypus",
         "source": {
             "width":  285,
             "height": 691,
@@ -17,12 +17,11 @@
             "pinId": "backside",
             "x": 85,
             "y": 354,
-            "z": -1,
-            "angle": -30
+            "z": -1
         }]
     },{
-        "type": "render-image",
-        "image": ["platypus"],
+        "type": "render-sprite",
+        "image": "platypus",
         "source": {
             "width":  150,
             "height": 146,
@@ -34,7 +33,7 @@
         "pinTo": "backside"
 	}],
 	"properties": {
-	    "x": 600,
+	    "x": 514,
 	    "y": 440
 	}
 }

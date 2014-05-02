@@ -1,19 +1,18 @@
 {
-	"id": "render-image-small-reg-bottom",
+	"id": "render-sprite-small-mask-api",
 	"components":[{
-		"type": "render-image",
-		"image": ["platypus"],
+		"type": "render-sprite",
+		"image": "platypus",
         "source": {
             "width":  343,
             "height": 691  
         },
 		"scaleX": 0.25,
 		"scaleY": 0.25,
-        "regX": 172,
-        "regY": 439
+		"mask": "dc(0,0,100)"
 	}],
 	"properties": {
-	    "x": 686,
-	    "y": 110
+	    "x": 514,
+	    "y": 330
 	}
 }
