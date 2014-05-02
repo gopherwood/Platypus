@@ -9,9 +9,12 @@
         },
 		"scaleX": 0.25,
 		"scaleY": 0.25,
+        "regX": 172,
+        "regY": 439,
 		"mask": {
-		    "shape": "circle",
-		    "radius": 100
+		    "radius": 25,
+		    "x": 600,
+            "y": 255
 		}
 	}],
 	"properties": {
