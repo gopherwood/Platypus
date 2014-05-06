@@ -33,6 +33,7 @@
 	height: 100%;
 	top: 0;
 	left: 0;
+	box-shadow: 0 0 1em;
 }
 /* We change the render area to leave room for touch controls */
 .supports-mobile #inner-root canvas {

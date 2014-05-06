@@ -2,29 +2,27 @@
 	"layers":[{
         "id": "action-layer",
         "components": [
-            {"type": "handler-controller"},
-            {"type": "handler-logic"},
             {"type": "camera", "width": 960},
             {
                 "type": "handler-render-createjs",
                 "autoClear": true
             },{
                 "type": "entity-container",
-                "entities": [
-                
-                // ORIGINAL:
-                {
-                    "type": "render-sprite-basic"
-                },
-                
-                // SCALING:
-                {
-                    "type": "render-sprite-basic",
-                    "properties": {
-                        "scaleX": 0.25,
-                        "x": 343
-                    }
-                },{
+                "entities": [{
+    "id": "render-sprite-basic",
+    "components":[{
+        "type": "render-sprite",
+        "image": "platypus",
+        "source": {
+            "width":  343,
+            "height": 439  
+        }
+    }],
+    "properties":{
+        "x": 0,
+        "y": 0
+    }
+},{
                     "type": "render-sprite-basic",
                     "properties": {
                         "scaleY": 0.25,
@@ -66,5 +64,21 @@
                 ]
             }
         ]
-	}]
+    },{
+        "id": "code-view-layer",
+        "components": [{
+            "type": "handler-render-dom"
+        },{
+            "type": "entity-container", 
+            "entities": [{
+                "type": "code-view"
+            },{
+                "type": "next-button",
+                "scene": "render-sprite-scale-x"
+            },{
+                "type": "back-button"
+            }],
+            "childEvents": ["scene-live"]
+        }]
+    }]
 }

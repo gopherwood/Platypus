@@ -1,29 +1,41 @@
-/*
- *  The in-game GUI (apart from buttons, defined in button.css)
- */
-
-/* The top-right notification area during game-play */
-.gem-bar {
+pre {
+bottom: 1em;
+right: 1em;
+margin: 0;
+padding: 1em;
+font-size: 2em;
+border-radius: 1em;
+background: rgba(0,0,0,0.7);
+box-shadow: inset 0 0 1em 0 #5fff41;
+color: #5fff41;
+font-family: monospace;
+text-shadow: 0 0 0.2em #5fff41, 0 0 0.1em #5fff41;
 position: absolute;
-right: 0;
-top: 0;
-width: 16em;
-height: 10em;
-background: url('../images/gem-bar.png') no-repeat;
-background-size: 100%;
 }
 
-/* The active counter in the notification area above */
-.gem-counter {
-position: absolute;
-right: 0;
-top: 0;
-width: 2em;
-text-align: center;
-font-size: 5em;
-color: white;
+.next, .back {
+cursor: pointer;
 font-family: arial;
-font-weight: bold;
-line-height: 1.6em;
-height: 1.6em;
+background: rgba(0,0,0,0.2);
+width: 4%;
+font-size: 3em;
+color: #fff;
+line-height: 5em;
+height: 5em;
+text-align: center;
+margin-top: -2.5em;
+position: absolute;
+top: 50%;
+}
+
+.next {
+border-bottom-left-radius: 1em;
+border-top-left-radius: 1em;
+right: 0;
+}
+
+.back {
+border-bottom-right-radius: 1em;
+border-top-right-radius: 1em;
+left: 0;
 }

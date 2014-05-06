@@ -75,30 +75,54 @@
             {"id": "button-render-sprite","src": "entities/button-render-sprite.json"},
             {"id": "button-right",    "src": "entities/button-right.json"},
             {"id": "button-mute",     "src": "entities/button-mute.json"},
-			{"id": "hero",            "src": "entities/hero.json"},
+			{"id": "code-view-layer",            "src": "entities/code-view-layer.json"},
             {"id": "progress-bar",    "src": "entities/progress-bar.json"},
-            {"id": "render-sprite-basic",             "src": "entities/render-sprite-basic.json"},
-            {"id": "render-sprite-small-mask-api",    "src": "entities/render-sprite-small-mask-api.json"},
-            {"id": "render-sprite-small-mask-json",   "src": "entities/render-sprite-small-mask-json.json"},
-            {"id": "render-sprite-small-pin",         "src": "entities/render-sprite-small-pin.json"},
-            {"id": "render-sprite-small-pin-rotated", "src": "entities/render-sprite-small-pin-rotated.json"},
-            {"id": "render-sprite-small-reg-bottom",  "src": "entities/render-sprite-small-reg-bottom.json"},
-            {"id": "render-sprite-small-reg-center",  "src": "entities/render-sprite-small-reg-center.json"},
-            {"id": "render-sprite-small-reg-top",     "src": "entities/render-sprite-small-reg-top.json"},
-            {"id": "level-portal",	  "src": "entities/level-portal.json"},
             {"id": "title-screen",    "src": "entities/title-screen.json"},
-            {"id": "fps-counter",	  "src": "entities/fps-counter.json"}
+            {
+                "id": "code-view",
+                "components": [{
+                    "type": "code-view"
+                },{
+                    "type": "dom-element",
+                    "element": "pre"
+                }]
+            },{
+                "id": "back-button",
+                "components": [{
+                    "type": "dom-element",
+                    "className": "back",
+                    "onmouseup": "new-scene",
+                    "ontouchend": "new-scene",
+                    "innerHTML": "<"
+                },{
+                    "type": "change-scene"
+                }]
+            },{
+                "id": "next-button",
+                "components": [{
+                    "type": "dom-element",
+                    "className": "next",
+                    "onmouseup": "new-scene",
+                    "ontouchend": "new-scene",
+                    "innerHTML": ">"
+                },{
+                    "type": "change-scene"
+                }]
+            }
 		],
 		"scenes": [ // JSON files describing scenes
-            {"id": "load",        "src": "scenes/load.json"}, // If "src" key is included, this will be replaced by the JSON structure in the linked file.
-            {"id": "menu",        "src": "scenes/menu.json"},
-            {"id": "render-sprite",  "src": "scenes/render-sprite.json"},
-			{"id": "scene-level-1", "src": "scenes/scene-level-1.json"}
+            {"id": "load",            "src": "scenes/load.json"}, // If "src" key is included, this will be replaced by the JSON structure in the linked file.
+            {"id": "menu",            "src": "scenes/menu.json"},
+            {"id": "sprite",          "src": "scenes/sprite.json"},
+            {"id": "sprite-source",   "src": "scenes/sprite-source.json"},
+            {"id": "sprite-scale-x",  "src": "scenes/sprite-scale-x.json"},
+            {"id": "sprite-scale-y",  "src": "scenes/sprite-scale-y.json"},
+            {"id": "sprite-scale-xy", "src": "scenes/sprite-scale-xy.json"},
+            {"id": "sprite-reg-top-center",  "src": "scenes/sprite-reg-top-center.json"},
+            {"id": "sprite-reg-center-center",  "src": "scenes/sprite-reg-center-center.json"},
+            {"id": "sprite-reg-bottom-center",  "src": "scenes/sprite-reg-bottom-center.json"}
 		],
-		"levels": [ // JSON files describing levels
-            {"id": "level-1", "src": "levels/level-1.json"} // If "src" key is included, this will be replaced by the JSON structure in the linked file.
-
-		]
+		"levels": []
 	},
 	"client-supports": [ // "client-supports" is an array of different file sources used where a different file type or size may be required depending on properties of the client.
 		{                //    Each contained object lists mutually exclusive properties, so that a single aspect is comprised of an item from each object list. This example includes a single object in the list, but additional objects can be appended for different aspects

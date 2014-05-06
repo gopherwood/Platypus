@@ -12,7 +12,7 @@
                 "id": "container",
                 "components":[{
                     "type": "change-scene",
-                    "scene": "menu",
+                    "scene": "sprite",
                     "aliases": {
                         "complete": "new-scene"
                     }

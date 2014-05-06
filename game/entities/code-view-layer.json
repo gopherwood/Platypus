@@ -1,0 +1,35 @@
+{
+    "id": "code-view-layer",
+    "filter": {
+        "excludes": ["mobile"]
+    },
+    "components": [
+        {
+            "type": "handler-render-dom"
+        },{
+            "type": "entity-container", 
+            "entities": [{
+                "id": "code-view",
+                "components": [{
+                    "type": "code-view"
+                },{
+                    "type": "dom-element",
+                    "element": "pre"
+                },{
+                    "type": "dom-element",
+                    "className": "back",
+                    "onmouseup": "back",
+                    "ontouchend": "back",
+                    "innerHTML": "<"
+                },{
+                    "type": "dom-element",
+                    "className": "next",
+                    "onmouseup": "next",
+                    "ontouchend": "next",
+                    "innerHTML": ">"
+                }]
+            }],
+            "childEvents": ["scene-live"]
+        }
+    ]
+}

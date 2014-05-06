@@ -1,0 +1,41 @@
+{
+	"layers":[{
+        "id": "action-layer",
+        "components": [
+            {"type": "camera", "width": 960},
+            {
+                "type": "handler-render-createjs",
+                "autoClear": true
+            },{
+                "type": "entity-container",
+                "entities": [{
+                    "id": "Platypus",
+                    "components":[{
+                        "type": "render-sprite",
+                        "image": "platypus"
+                    }],
+                    "properties":{
+                        "x": 0,
+                        "y": 0
+                    }
+                }]
+            }
+        ]
+    },{
+        "id": "code-view-layer",
+        "components": [{
+            "type": "handler-render-dom"
+        },{
+            "type": "entity-container", 
+            "entities": [{
+                "type": "code-view"
+            },{
+                "type": "next-button",
+                "properties": {
+                    "scene": "sprite-source"
+                }
+            }],
+            "childEvents": ["scene-live"]
+        }]
+    }]
+}
