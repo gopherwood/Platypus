@@ -111,16 +111,20 @@
             }
 		],
 		"scenes": [ // JSON files describing scenes
-            {"id": "load",            "src": "scenes/load.json"}, // If "src" key is included, this will be replaced by the JSON structure in the linked file.
-            {"id": "menu",            "src": "scenes/menu.json"},
-            {"id": "sprite",          "src": "scenes/sprite.json"},
-            {"id": "sprite-source",   "src": "scenes/sprite-source.json"},
-            {"id": "sprite-scale-x",  "src": "scenes/sprite-scale-x.json"},
-            {"id": "sprite-scale-y",  "src": "scenes/sprite-scale-y.json"},
-            {"id": "sprite-scale-xy", "src": "scenes/sprite-scale-xy.json"},
-            {"id": "sprite-reg-top-center",  "src": "scenes/sprite-reg-top-center.json"},
-            {"id": "sprite-reg-center-center",  "src": "scenes/sprite-reg-center-center.json"},
-            {"id": "sprite-reg-bottom-center",  "src": "scenes/sprite-reg-bottom-center.json"}
+            {"id": "load",                     "src": "scenes/load.json"}, // If "src" key is included, this will be replaced by the JSON structure in the linked file.
+            {"id": "menu",                     "src": "scenes/menu.json"},
+            {"id": "sprite",                   "src": "scenes/sprite.json"},
+            {"id": "sprite-source",            "src": "scenes/sprite-source.json"},
+            {"id": "sprite-scale-x",           "src": "scenes/sprite-scale-x.json"},
+            {"id": "sprite-scale-y",           "src": "scenes/sprite-scale-y.json"},
+            {"id": "sprite-scale-xy",          "src": "scenes/sprite-scale-xy.json"},
+            {"id": "sprite-reg-top-center",    "src": "scenes/sprite-reg-top-center.json"},
+            {"id": "sprite-reg-center-center", "src": "scenes/sprite-reg-center-center.json"},
+            {"id": "sprite-reg-bottom-center", "src": "scenes/sprite-reg-bottom-center.json"},
+            {"id": "sprite-mask-json",         "src": "scenes/sprite-mask-json.json"},
+            {"id": "sprite-mask-api",          "src": "scenes/sprite-mask-api.json"},
+            {"id": "sprite-pin",               "src": "scenes/sprite-pin.json"},
+            {"id": "sprite-pin-rotated",       "src": "scenes/sprite-pin-rotated.json"}
 		],
 		"levels": []
 	},

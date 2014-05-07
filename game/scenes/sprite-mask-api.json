@@ -15,12 +15,11 @@
                         "image": "platypus",
                         "width":  343,
                         "height": 439,
-                        "regX":   171,
-                        "regY":   439
+                        "mask": "dc(320,200,100).r(272,280,96,120)"
                     }],
                     "properties":{
-                        "x": 300,
-                        "y": 360
+                        "x": 150,
+                        "y": 50
                     }
                 }]
             }
@@ -36,12 +35,12 @@
             },{
                 "type": "next-button",
                 "properties": {
-                    "scene": "sprite-mask-json"
+                    "scene": "sprite-pin"
                 }
             },{
                 "type": "back-button",
                 "properties": {
-                    "scene": "sprite-reg-center-center"
+                    "scene": "sprite-mask-json"
                 }
             }],
             "childEvents": ["scene-live"]

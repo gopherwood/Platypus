@@ -13,14 +13,29 @@
                     "components":[{
                         "type": "render-sprite",
                         "image": "platypus",
-                        "width":  343,
-                        "height": 439,
-                        "regX":   171,
-                        "regY":   439
+                        "width":  285,
+                        "height": 691,
+                        "x":      343,
+                        "pins": [{
+                            "pinId": "backside",
+                            "x": 85,
+                            "y": 354,
+                            "z": -1,
+                            "angle": -30
+                        }]
+                    },{
+                        "type": "render-sprite",
+                        "image": "platypus",
+                        "width":  150,
+                        "height": 146,
+                        "x": 632,
+                        "regX": 132,
+                        "regY": 128,
+                        "pinTo": "backside"
                     }],
                     "properties":{
-                        "x": 300,
-                        "y": 360
+                        "x": 150,
+                        "y": 50
                     }
                 }]
             }
@@ -34,14 +49,9 @@
             "entities": [{
                 "type": "code-view"
             },{
-                "type": "next-button",
-                "properties": {
-                    "scene": "sprite-mask-json"
-                }
-            },{
                 "type": "back-button",
                 "properties": {
-                    "scene": "sprite-reg-center-center"
+                    "scene": "sprite-pin"
                 }
             }],
             "childEvents": ["scene-live"]
