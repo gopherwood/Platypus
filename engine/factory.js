@@ -81,14 +81,17 @@
 
 		// This function should never be called by the component itself. Call this.owner.removeComponent(this) instead.
 		proto.destroy = function(){
-			for(func in this.publicMethods){
-				this.removeMethod(func);
-			}
-
-			this.removeEventListeners();
+			
+			// Handle component's destroy method before removing messaging and methods.
 			if(this.___destroy){
 				this.___destroy();
 			}
+			
+			// Now remove event listeners and methods.
+			for(func in this.publicMethods){
+				this.removeMethod(func);
+			}
+			this.removeEventListeners();
 		};
 		
 		proto.setProperty = function(property, value){
@@ -150,7 +153,7 @@
 			messages   = this.listener.messages;
 			for(var i = 0; i < events.length; i++){
 				if((events[i] === event) && (!callback || (messages[i] === callback))){
-					this.owner.unbind(event, messages[i]);
+					this.owner.unbind(event, messages[i], this);
 				}
 			}
 		};

@@ -87,6 +87,8 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 			this.velocityIterations = 	definition.velocityIterations 	|| 10;
 			this.positionIterations = 	definition.positionIterations 	|| 10;
 			this.entities = []; //All the entities that have a body in the simulation.
+			this.destroyBodies = [];
+			this.paused = false;
 			
 			var defFlags = 0;
 			if (definition.debugCanvas && definition.debugCanvas.flags) {
@@ -209,8 +211,9 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 		    };
 		    this.world.SetContactListener(listener);
 		     
+		    
 			//setup debug canvas
-		    if (platformer.settings.debug) {
+		    if (definition.debug || ((definition.debug !== false) && (this.owner.debug || platformer.settings.debug))) {
 			    this.debugCanvas = document.createElement('canvas');
 			    this.debugCanvas.style.pointerEvents = 'none';
 			    this.debugCanvas.id = debugCanvasSettings.id;
@@ -233,8 +236,8 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 			"child-entity-added": function(entity){
 				var messageIds = entity.getMessageIds(); 
 				var worldData  = { 
-						"world": this.world, 
-						"drawScale": (this.debugDraw) ? this.debugDraw.GetDrawScale() : 30
+					"world": this.world, 
+					"drawScale": (this.debugDraw) ? this.debugDraw.GetDrawScale() : 30
 				};
 				
 				for (var x = 0; x < messageIds.length; x++)
@@ -246,40 +249,84 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 					}
 				}
 			},
-			"check-collision-group": function(resp) {
-				for (var x = 0; x < this.entities.length; x++){
-					this.entities[x].triggerEvent('handle-box2d-pre-step', resp);
-				}
-				this.world.Step(
-									this.simulationFrequency,
-					               	this.velocityIterations,
-					              	this.positionIterations
-				         		);
-				this.world.DrawDebugData();
-				this.world.ClearForces();
-				for (var x = 0; x < this.entities.length; x++){
-					this.entities[x].triggerEvent('handle-box2d', resp);
+			"body-removed": function(body){
+				this.destroyBodies.push(body);
+			},
+			"child-entity-removed": function(entity){
+				for (var j = this.entities.length - 1; j > -1; j--) {
+					if(this.entities[j] === entity){
+						//this.destroyBodies.push(entity.body);
+						this.entities.splice(j, 1);
+						break;
+					}
 				}
 			},
+			"check-collision-group": function(resp) {
+				if(this.destroyBodies.length){
+					for(var i = 0; i < this.destroyBodies.length; i++){
+						this.world.DestroyBody(this.destroyBodies[i]);
+					}
+					this.destroyBodies.length = 0;
+				}
+				
+				if (!this.paused) {
+					for (var x = 0; x < this.entities.length; x++){
+						this.entities[x].triggerEvent('handle-box2d-pre-step', resp);
+					}
+					this.world.Step(
+										this.simulationFrequency,
+						               	this.velocityIterations,
+						              	this.positionIterations
+					         		);
+					this.world.ClearForces();
+					for (var x = 0; x < this.entities.length; x++){
+						this.entities[x].triggerEvent('handle-box2d', resp);
+					}
+				}
+			},
+			"tick": function(cameraInfo){ // needs to be placed after logic-handler and camera in layer stack for debug draw to work.
+				this.world.DrawDebugData();
+			},
 			"camera-update": function(cameraInfo){
-				if(platformer.game.settings.debug) {
-					var dpr = (window.devicePixelRatio || 1);
+				if(this.debugCanvas) {
+					var dpr = (window.devicePixelRatio || 1),
+					viewportCenterX = cameraInfo.viewportLeft + cameraInfo.viewportWidth / 2,
+					viewportCenterY = cameraInfo.viewportTop + cameraInfo.viewportHeight / 2,
+					bx = -cameraInfo.viewportLeft,
+					by = -cameraInfo.viewportTop,
+					sin = Math.sin(-cameraInfo.orientation),
+					cos = Math.cos(-cameraInfo.orientation),
+					rx = bx * cos - by * sin,
+					ry = bx * sin + by * cos;
 					
-					this.debugCanvas.width  = this.debugCanvas.offsetWidth * dpr;
-					this.debugCanvas.height = this.debugCanvas.offsetHeight * dpr;
-					
+					if((this.debugCanvas.width !== this.debugCanvas.offsetWidth * dpr) || (this.debugCanvas.height !== this.debugCanvas.offsetHeight * dpr)){
+						this.debugCanvas.width  = this.debugCanvas.offsetWidth * dpr;
+						this.debugCanvas.height = this.debugCanvas.offsetHeight * dpr;
+					}
+
 					this.ctx.restore();
 					this.ctx.save();
-					this.ctx.translate(-cameraInfo.viewportLeft * cameraInfo.scaleX * dpr, -cameraInfo.viewportTop * cameraInfo.scaleY * dpr);
 					this.ctx.scale(cameraInfo.scaleX * dpr, cameraInfo.scaleY * dpr);
+					
+					this.ctx.translate(viewportCenterX, viewportCenterY);
+					this.ctx.rotate(cameraInfo.orientation);
+					this.ctx.translate(rx - viewportCenterX, ry - viewportCenterY);
 				}
+			},
+			"pause-collision": function(){
+				this.paused = true;
+			},
+			"unpause-collision": function(){
+				this.paused = false;
 			}
 		},
 		
 		methods: {// These are methods that are called by this component.
 			destroy: function() {
 				this.world = null;
-				this.debugCanvas.parentNode.removeChild(this.debugCanvas);
+				if (this.debugCanvas && this.debugCanvas.parentNode) {
+					this.debugCanvas.parentNode.removeChild(this.debugCanvas);
+				}
 				this.debugCanvas = null;
 				this.debugDraw = null;
 				this.ctx = null;

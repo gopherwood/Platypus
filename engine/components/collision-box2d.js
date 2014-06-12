@@ -274,8 +274,35 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 						bodyDef.type = b2Body.b2_dynamicBody;
 					}
 					
+					if (typeof this.def.body.active !== 'undefined') {
+						bodyDef.active = this.def.body.active;
+					}
 					if (typeof this.def.body.allowSleep !== 'undefined') {
 						bodyDef.allowSleep = this.def.body.allowSleep;
+					}
+					if (typeof this.def.body.angle !== 'undefined') {
+						bodyDef.angle = this.def.body.angle;
+					}
+					if (typeof this.def.body.angularDamping !== 'undefined') {
+						bodyDef.angularDamping = this.def.body.angularDamping;
+					}
+					if (typeof this.def.body.angularVelocity !== 'undefined') {
+						bodyDef.angularVelocity = this.def.body.angularVelocity;
+					}
+					if (typeof this.def.body.awake !== 'undefined') {
+						bodyDef.awake = this.def.body.awake;
+					}
+					if (typeof this.def.body.bullet !== 'undefined') {
+						bodyDef.bullet = this.def.body.bullet;
+					}
+					if (typeof this.def.body.fixedRotation !== 'undefined') {
+						bodyDef.fixedRotation = this.def.body.fixedRotation;
+					}
+					if (typeof this.def.body.inertiaScale !== 'undefined') {
+						bodyDef.inertiaScale = this.def.body.inertiaScale;
+					}
+					if (typeof this.def.body.linearDamping !== 'undefined') {
+						bodyDef.linearDamping = this.def.body.linearDamping;
 					}
 					
 					//TODO: Positions from TILED probably need to be scaled....
@@ -289,6 +316,12 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 					this.owner.x = bodyDef.position.x * this.drawScale;
 					this.owner.y = bodyDef.position.y * this.drawScale;
 					this.owner.body = this.world.CreateBody(bodyDef);
+					
+					if(!this.owner.body){
+						console.warn('Unable to create Box2D Body for "' + this.owner.type + '".');
+						return;
+					}
+					
 					//setUser
 					
 					if (this.def.body.defaultFixtureData) {
@@ -430,13 +463,7 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 				this.owner.triggerEvent('box2d-body-initialized', this.owner.body);
 			},
 			"handle-box2d-pre-step": function(resp) {
-				var bodyPos = this.owner.body.GetPosition();
-				var pos = null;
-				if (this.owner.x / this.drawScale != bodyPos.x || this.owner.y / this.drawScale != bodyPos.y || this.owner.orientation != this.owner.body.GetAngle()) {
-					pos = new b2Vec2(this.owner.x / this.drawScale, this.owner.y / this.drawScale);
-					this.owner.body.SetPosition(pos);
-					this.owner.body.SetAngle(this.owner.orientation);
-				}
+				this.matchBodyToEntity();
 			},
 			"handle-box2d": function(resp) {
 				this.matchEntityToBody();
@@ -471,7 +498,8 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 		
 		methods: {// These are methods that are called by this component.
 			destroy: function() {
-				this.world.DestroyBody(this.owner.body);
+				//this.owner.body.SetUserData(null);
+				this.owner.parent.triggerEvent('body-removed', this.owner.body);
 				this.owner.body = null;
 				this.world = null;
 				this.def = null;
@@ -498,7 +526,7 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 					entityProperties.x = this.owner.x + jointData.object.offset.x;
 					entityProperties.y = this.owner.y + jointData.object.offset.y;
 				}
-				other = this.owner.parent.addEntity(new platformer.classes.entity(platformer.game.settings.entities[jointData.object.type], {properties:entityProperties}));
+				other = this.owner.parent.addEntity(new platformer.Entity(platformer.game.settings.entities[jointData.object.type], {properties:entityProperties}));
 				
 				jointDef = new b2RevoluteJointDef();
 				
@@ -569,6 +597,16 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 				this.owner.x = pos.x * this.drawScale;
 				this.owner.y = pos.y * this.drawScale;
 				this.owner.orientation = angle;
+			},
+			
+			matchBodyToEntity: function(){
+				var bodyPos = this.owner.body.GetPosition();
+				var pos = null;
+				if (this.owner.x / this.drawScale != bodyPos.x || this.owner.y / this.drawScale != bodyPos.y || this.owner.orientation != this.owner.body.GetAngle()) {
+					pos = new b2Vec2(this.owner.x / this.drawScale, this.owner.y / this.drawScale);
+					this.owner.body.SetPosition(pos);
+					this.owner.body.SetAngle(this.owner.orientation);
+				}
 			}
 		}
 	});
