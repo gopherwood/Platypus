@@ -527,6 +527,7 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 					entityProperties.y = this.owner.y + jointData.object.offset.y;
 				}
 				other = this.owner.parent.addEntity(new platformer.Entity(platformer.game.settings.entities[jointData.object.type], {properties:entityProperties}));
+				this.owner.triggerEvent('entity-created', other);
 				
 				jointDef = new b2RevoluteJointDef();
 				
