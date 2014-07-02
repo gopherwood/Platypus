@@ -417,7 +417,15 @@ This component is attached to a top-level entity (loaded by the [[Scene]]) and, 
 								properties.width  = platformer.game.settings.entities[entityType].properties.width  || properties.width;
 								properties.height = platformer.game.settings.entities[entityType].properties.height || properties.height;
 							}
-
+							
+							if (entity.polygon) {
+								properties.polygon = [];
+								for (var p = 0; p < entity.polygon.length; p++) {
+									properties.polygon.push({"x": entity.polygon[p].x, "y": entity.polygon[p].y});
+									
+								}
+							}
+							
 							properties.x = entity.x * this.unitsPerPixel;
 							if(this.entityPositionX === 'left'){
 								properties.regX = 0;
