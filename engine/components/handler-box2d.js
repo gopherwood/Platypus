@@ -81,7 +81,7 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 		id: 'handler-box2d',
 		
 		constructor: function(definition){
-			var gravity = definition.gravity || {x: 0, y: 0};
+			var gravity = definition.gravity || {x: 0, y: 10};
 			var allowSleep = (typeof definition.allowSleep !== 'undefined') ? definition.allowSleep : true;
 			this.simulationFrequency = 	definition.simulationFrequency 	|| 1 / platformer.game.settings.global.fps || 1/ 60;
 			this.velocityIterations = 	definition.velocityIterations 	|| 10;
@@ -98,7 +98,7 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 				if (definition.debugCanvas.flags.e_centerOfMassBit) {
 					defFlags |= b2DebugDraw.e_centerOfMassBit;
 				}
-				if (definition.debugCanvas.flags.e_centerOfMassBit) {
+				if (definition.debugCanvas.flags.e_controllerBit) {
 					defFlags |= b2DebugDraw.e_controllerBit;
 				}
 				if (definition.debugCanvas.flags.e_jointBit) {

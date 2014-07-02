@@ -51,6 +51,7 @@ This component creates and maintains a box2D body updating the entity position a
         "body": {
         //Required. The definition of the box2d body.
         	"type": "dynamic", //Optional. The of box2d body. This can be static, kinematic, or dynamic. Defaults to dynamic.
+        	"angularDamping": 0.02, //A damping value on the angular velocity. Defaults to 0.
         	"defaultFixtureData": {
         	//Optional. A set of default parameters for all the fixtures on this body. These parameters are overriden by parameters on the individual fixture definitions. The defaultFixtureData CANNOT include shapes.
         		"density": 		1, //Optional. The density of the fixture. Defaults to 1.
@@ -89,8 +90,10 @@ This component creates and maintains a box2D body updating the entity position a
         				//You can define shapes as rectangles, circles or polygons. Below is how to define a rectangle.
             			"halfWidth": 15, //Required if you're defining a rectangle. This is half the width of the rectangle. 
             			"halfHeight": 15 //Required if you're defining a rectangle. This is half the height of the rectangle.
-        				"x": 2, //Optional offset from body's center. Both x and y default to 0.
-        				"y": 8 //Optional offset from body's center. Both x and y default to 0.
+        				"x": 2, //Optional - offset of body's center. Both x and y default to 0.
+        				"y": 8, //Optional - offset of body's center. Both x and y default to 0.
+        				"angle": 1.57 //Optional - The angle of the orientation of the box
+        			}
         		},{
         			"density": 		2,
         			"friction": 	2.5,
@@ -136,7 +139,7 @@ This component creates and maintains a box2D body updating the entity position a
         "joints": [
         //Optional. An array of joints definitions.
         	{
-        		"type": "revolute", //Required. The type of box2d joint to create. Can be 'distance', 'friction', 'gear', 'line', 'mouse', 'prismatic', 'pulley', 'revolute', or 'weld'. Only 'revolute' is currently implemented.
+        		"type": "revolute", //Required. The type of box2d joint to create. Can be 'distance', 'friction', 'gear', 'line', 'mouse', 'prismatic', 'pulley', 'revolute', or 'weld'. Only 'revolute', 'prismatic', and 'distance' are currently implemented.
         		"object": {
         			//Required. The definition of the object we are joining to.
         			"type": "static-round-peg", //Required. The type of object.
@@ -155,6 +158,53 @@ This component creates and maintains a box2D body updating the entity position a
         		"enableMotor": false, //Optional. Whether or not the joint should behave as a motor. Defaults to false.
         		"maxMotorTorque": 0, //Optional. The max amount of torque the motor will use to achieve the desired speed.
         		"motorSpeed": 0, //Optional. The desired motor speed in radians per second.
+        		"userData": {
+        		//Optional. This is where users can attach game specific data to the joint.
+        			"color": "pink"
+        		}
+        	},
+        	{
+        		"type": "prismatic", //Required. The type of box2d joint to create. Can be 'distance', 'friction', 'gear', 'line', 'mouse', 'prismatic', 'pulley', 'revolute', or 'weld'. Only 'revolute', 'prismatic', and 'distance' are currently implemented.
+        		"object": {
+        			//Required. The definition of the object we are joining to.
+        			"type": "static-round-peg", //Required. The type of object.
+        			"properties": {
+        				//Optional. The object properties.
+        			},
+        			"offset": {"x": 25, "y":0} //The offset of the new object from the position of this entity. Defaults to 0,0.
+        		}, 
+        		"localAnchorA": {"x": 25, "y": 0}, //Optional. The position of the localAnchor on this body. Defaults to 0,0.
+        		"localAnchorB": {"x": 0, "y": 0}, //Optional. The position of the localAnchor on the body we are joining to. Defaults to 0,0.
+        		"localAxisA": {"x": 0, "y": 1}, //Optional. The axis on which the join moves. Defaults to 0,0.
+        		"referenceAngle": 0, //Optional. The other body angle minus this body's angle in the reference state. Defaults to 0.
+        		"collideConnected": false, //Optional. whether the joined bodies collide. Defaults to false.
+        		"enableLimit": false, //Optional. Whether or not to limit the angle the bodies can rotate. Defaults to false.
+        		"lowerTranslation": 0, //Optional. The lower translation for the joint limit in meters.
+        		"upperTranslation": 0, //Optional. The upper translation for the joint limit in meters.
+        		"enableMotor": false, //Optional. Whether or not the joint should behave as a motor. Defaults to false.
+        		"maxMotorForce": 0, //Optional. The max amount of force the motor will use to achieve the desired speed.
+        		"motorSpeed": 0, //Optional. The desired motor speed in radians per second.
+        		"userData": {
+        		//Optional. This is where users can attach game specific data to the joint.
+        			"color": "pink"
+        		}
+        	},
+        	{
+        		"type": "distance", //Required. The type of box2d joint to create. Can be 'distance', 'friction', 'gear', 'line', 'mouse', 'prismatic', 'pulley', 'revolute', or 'weld'. Only 'revolute', 'prismatic', and 'distance' are currently implemented.
+        		"object": {
+        			//Required. The definition of the object we are joining to.
+        			"type": "static-round-peg", //Required. The type of object.
+        			"properties": {
+        				//Optional. The object properties.
+        			},
+        			"offset": {"x": 25, "y":0} //The offset of the new object from the position of this entity. Defaults to 0,0.
+        		}, 
+        		"localAnchorA": {"x": 25, "y": 0}, //Optional. The position of the localAnchor on this body. Defaults to 0,0.
+        		"localAnchorB": {"x": 0, "y": 0}, //Optional. The position of the localAnchor on the body we are joining to. Defaults to 0,0.
+        		"collideConnected": false, //Optional. whether the joined bodies collide. Defaults to false.
+        		"length": 10, //Optional. The natrual length between the anchor points. Defaults to 0.
+        		"dampingRatio": .25, //Optional. The damping ratio of the joint. 0 = no damping, 1 = critical damping. Defaults to 0.5.
+        		"frequencyHz": 30, //Optional. The mass-spring-damper frequency in Hertz. Defaults to 10.
         		"userData": {
         		//Optional. This is where users can attach game specific data to the joint.
         			"color": "pink"
@@ -179,6 +229,8 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 		b2DebugDraw 		= Box2D.Dynamics.b2DebugDraw,
 		b2FilterData		= Box2D.Dynamics.b2FilterData,
 		b2RevoluteJointDef	= Box2D.Dynamics.Joints.b2RevoluteJointDef,
+		b2PrismaticJointDef	= Box2D.Dynamics.Joints.b2PrismaticJointDef,
+		b2DistanceJointDef	= Box2D.Dynamics.Joints.b2DistanceJointDef,
 		defaultDensity  	= 1,
 		defaultFriction 	= 0.5,
 		defaultRestitution 	= 0.2;
@@ -253,14 +305,14 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 				this.owner.body = null;
 				var bodyDef = new b2BodyDef();
 				var fixDef  = new b2FixtureDef();
-				var bodyFixDef = null;
-				var shapeFixDef = null;
-				var shapeDef = null;
+				var entity = null;
 				var vectors = null;
 				var vector = null;
 				var filter = new b2FilterData();
 				var joints = [];
 				var jointData = null;
+				var specificFixDefs = null;				
+				
 				if(this.def.body) {
 					//bodyDef = new b2BodyDef;
 					bodyDef.userData = {};
@@ -330,8 +382,15 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 						defaultFixData = {};
 					}
 					
-					for (var x = 0; x < this.def.body.fixtureDefinitions.length; x++) {
-						def = this.def.body.fixtureDefinitions[x];
+					specificFixDefs = this.def.body.fixtureDefinitions; 
+					if (!specificFixDefs && this.owner.polygon) {
+						//If there are no fixture definitions, but the owner does have a polygon, we process that and use the generic fixture definition data.
+						specificFixDefs = [];
+						this.processPolygon(specificFixDefs, this.owner.polygon);
+					} 
+					
+					for (var x = 0; x < specificFixDefs.length; x++) {
+						def = specificFixDefs[x];
 						
 						if (typeof def.density !== 'undefined') {
 							fixDef.density = def.density;
@@ -417,16 +476,45 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 								vectors[c] = vector;
 							}
 							fixDef.shape = new b2PolygonShape();
-							fixDef.shape.SetAsArray(vectors, vectors.length);
+							if (vectors.length == 2) {
+								//If we only have two points, it's an edge, not a polygon.
+								fixDef.shape.SetAsEdge(vectors[0], vectors[1]);
+							} else {
+								fixDef.shape.SetAsArray(vectors, vectors.length);
+							}
 						} else if (def.shape.halfWidth && def.shape.halfHeight) {
 							fixDef.shape = new b2PolygonShape();
-							if(def.shape.x || def.shape.y){
-								fixDef.shape.SetAsOrientedBox(def.shape.halfWidth / this.drawScale, def.shape.halfHeight / this.drawScale, new b2Vec2((def.shape.x || 0) / this.drawScale, (def.shape.y || 0) / this.drawScale));
-							} else {
-								fixDef.shape.SetAsBox(def.shape.halfWidth / this.drawScale, def.shape.halfHeight / this.drawScale);
-							}
+							fixDef.shape.SetAsOrientedBox(def.shape.halfWidth / this.drawScale, def.shape.halfHeight / this.drawScale, new b2Vec2((def.shape.x || 0) / this.drawScale, (def.shape.y || 0) / this.drawScale), (def.shape.angle || 0));
 						}
 						this.owner.body.CreateFixture(fixDef);
+					}
+				}
+				
+				
+				var entDef = null;
+				var entityProperties = {};
+				if (this.def.connectedEntities) {
+					
+					for (var x = 0; x < this.def.connectedEntities.length; x++) {
+						entDef = this.def.connectedEntities[x];
+						
+						entityProperties = {};
+						for(var x in entDef.properties) {
+							entityProperties[x] = entDef.properties[x];
+						}
+						if (entDef.offset) {
+							entityProperties.x = this.owner.x + entDef.offset.x;
+							entityProperties.y = this.owner.y + entDef.offset.y;
+						}
+						if (entDef.joinId) {
+							entityProperties.joinId = entDef.joinId;
+						}
+						entity = new platformer.Entity(platformer.game.settings.entities[entDef.type], {
+							properties: entityProperties
+						});
+						this.owner.triggerEvent('entity-created', entity);
+						this.owner.parent.addEntity(entity);
+						this.connectedEntities.push(entity);
 					}
 				}
 				
@@ -440,7 +528,7 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 					jointData = joints[x];
 
 					if (jointData.type == 'distance') {
-						console.warn(jointData.type + ' joints are not implemented at this point');
+						this.createDistanceJoint(jointData);
 					} else if (jointData.type == 'friction') {
 						console.warn(jointData.type + ' joints are not implemented at this point');
 					} else if (jointData.type == 'gear') {
@@ -450,7 +538,7 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 					} else if (jointData.type == 'mouse') {
 						console.warn(jointData.type + ' joints are not implemented at this point');
 					} else if (jointData.type == 'prismatic') {
-						console.warn(jointData.type + ' joints are not implemented at this point');
+						this.createPrismaticJoint(jointData);
 					} else if (jointData.type == 'pulley') {
 						console.warn(jointData.type + ' joints are not implemented at this point');
 					} else if (jointData.type == 'revolute') {
@@ -508,31 +596,68 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 				}
 				this.connectedEntities.length = 0;
 			},
+            findConnectedByJoinId: function(joinId) {
+				var ent = null;
+				for (var x = 0; x < this.connectedEntities.length; x++) {
+					if (this.connectedEntities[x].joinId == joinId) {
+						ent = this.connectedEntities[x];
+						break;
+					}
+				}
+				return ent;
+			},
+			processPolygon: function(fixDefs, points) {
+				//Creating Edges
+				for (var x = 0; x < points.length; x++) {
+					fixDefs[x] = {"shape": {"points": [ ]}};
+					if (x == points.length - 1){
+						fixDefs[x].shape.points[0] = {"x": points[x].x, 		"y": points[x].y};
+						fixDefs[x].shape.points[1] = {"x": points[0].x, 		"y": points[0].y};
+					} else {
+						fixDefs[x].shape.points[0] = {"x": points[x].x, 		"y": points[x].y};
+						fixDefs[x].shape.points[1] = {"x": points[x + 1].x, 	"y": points[x + 1].y};
+					}
+				}
+			},			
 			createRevoluteJoint: function(jointData) {
 				var jointDef = null;
-				var entity = null;
+				
 				var anchorA = new b2Vec2(0,0);
 				var anchorB = new b2Vec2(0,0);
 				var offset = null;
 				var entityProperties = null;
-				var other = null;
+				var entityA = null;
+				var entityB = null;
 				var joint = null;
 				
-				entityProperties = {};
-				for(var x in jointData.object.properties) {
-					entityProperties[x] = jointData.object.properties[x];
+				if (jointData.join && (jointData.join.A || jointData.join.B)) {
+					if (jointData.join.A) {
+						entityA = this.findConnectedByJoinId(jointData.join.A);
+						if (!entityA) {
+							console.warn('join.A: Invalid joinId');
+						}
+					} else {
+						entityA = this.owner;
+					}
+					
+					if (jointData.join.B) {
+						entityB = this.findConnectedByJoinId(jointData.join.B);
+						if (!entityB) {
+							console.warn('join.B: Invalid joinId');
+						}
+					} else {
+						entityB = this.owner;
+					}
+					
+				} else {
+					console.warn('Joint lacks appropriate join configurations. Does not specify entities to join');
 				}
-				if (jointData.object.offset) {
-					entityProperties.x = this.owner.x + jointData.object.offset.x;
-					entityProperties.y = this.owner.y + jointData.object.offset.y;
-				}
-				other = this.owner.parent.addEntity(new platformer.Entity(platformer.game.settings.entities[jointData.object.type], {properties:entityProperties}));
-				this.owner.triggerEvent('entity-created', other);
+				
 				
 				jointDef = new b2RevoluteJointDef();
 				
-				jointDef.bodyA = this.owner.body;
-				jointDef.bodyB = other.body;
+				jointDef.bodyA = entityA.body;
+				jointDef.bodyB = entityB.body;
 				
 				if (jointData.localAnchorA) {
 					anchorA.Set(jointData.localAnchorA.x / this.drawScale, jointData.localAnchorA.y / this.drawScale);
@@ -540,7 +665,7 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 				}
 				if (jointData.localAnchorB) {
 					anchorB.Set(jointData.localAnchorB.x / this.drawScale, jointData.localAnchorB.y / this.drawScale);
-					jointDef.localAnchorA = anchorA;
+					jointDef.localAnchorB = anchorB;
 				}
 				
 				if (typeof jointData.referenceAngle !== "undefined") {
@@ -584,10 +709,187 @@ Requires: ["../Box2dWeb-2.1.a.3.min.js"]
 				
 				joint = this.world.CreateJoint(jointDef);
 				
-				this.owner.triggerEvent('joint-attached', joint);
-				other.triggerEvent('joint-attached', joint);
+				entityA.triggerEvent('joint-attached', joint);
+				entityB.triggerEvent('joint-attached', joint);
 				
-				this.connectedEntities.push(other);
+				
+			},
+			createPrismaticJoint: function(jointData) {
+				var jointDef = null;
+				var entityA = null;
+				var entityB = null;
+				var anchorA = new b2Vec2(0,0);
+				var anchorB = new b2Vec2(0,0);
+				var localAxisA = new b2Vec2(0,0);
+				var offset = null;
+				var entityProperties = null;
+				
+				var joint = null;
+				
+				if (jointData.join && (jointData.join.A || jointData.join.B)) {
+					if (jointData.join.A) {
+						entityA = this.findConnectedByJoinId(jointData.join.A);
+						if (!entityA) {
+							console.warn('join.A: Invalid joinId');
+						}
+					} else {
+						entityA = this.owner;
+					}
+					
+					if (jointData.join.B) {
+						entityB = this.findConnectedByJoinId(jointData.join.B);
+						if (!entityB) {
+							console.warn('join.B: Invalid joinId');
+						}
+					} else {
+						entityB = this.owner;
+					}
+					
+				} else {
+					console.warn('Joint lacks appropriate join configurations. Does not specify entities to join');
+				}
+				
+				
+				jointDef = new b2PrismaticJointDef();
+				
+				jointDef.bodyA = entityA.body;
+				jointDef.bodyB = entityB.body;
+				
+				if (jointData.collideConnected) {
+					jointDef.collideConnected = true;
+				}
+				
+				if (jointData.localAnchorA) {
+					anchorA.Set(jointData.localAnchorA.x / this.drawScale, jointData.localAnchorA.y / this.drawScale);
+					jointDef.localAnchorA = anchorA;
+				}
+				if (jointData.localAnchorB) {
+					anchorB.Set(jointData.localAnchorB.x / this.drawScale, jointData.localAnchorB.y / this.drawScale);
+					jointDef.localAnchorB = anchorB;
+				}
+				
+				if (jointData.localAxisA) {
+					localAxisA.Set(jointData.localAxisA.x, jointData.localAxisA.y);
+					jointDef.localAxisA = localAxisA;
+				}
+				
+				if (typeof jointData.referenceAngle !== "undefined") {
+					jointDef.referenceAngle = jointData.referenceAngle;
+				}
+				
+				if (jointData.enableLimit) {
+					jointDef.enableLimit = true;
+				}
+				
+				if (typeof jointData.lowerTranslation !== "undefined") {
+					jointDef.lowerTranslation = jointData.lowerTranslation / this.drawScale;
+				}
+				
+				if (typeof jointData.upperTranslation !== "undefined") {
+					jointDef.upperTranslation = jointData.upperTranslation / this.drawScale;
+				}
+				
+				if (jointData.enableMotor) {
+					jointDef.enableMotor = true;
+				}
+				
+				if (typeof jointData.maxMotorForce !== "undefined") {
+					jointDef.maxMotorForce = jointData.maxMotorForce; //TODO: Should this be scaled by the drawScale????
+				}
+				
+				if (typeof jointData.motorSpeed !== "undefined") {
+					jointDef.motorSpeed = jointData.motorSpeed; //TODO: Should this be scaled by the drawScale????
+				}
+				
+				jointDef.userData = {};
+				if (jointData.userData) {
+					for (var t in jointData.userData) {
+						jointDef.userData[t] = jointData.userData[t];
+					}
+				}
+				
+				joint = this.world.CreateJoint(jointDef);
+				
+				entityA.triggerEvent('joint-attached', joint);
+				entityB.triggerEvent('joint-attached', joint);
+				
+			},
+			createDistanceJoint: function(jointData) {
+				var jointDef = null;
+				var anchorA = new b2Vec2(0,0);
+				var anchorB = new b2Vec2(0,0);
+				var offset = null;
+				var entityProperties = null;
+				var entityA = null;
+				var entityB = null;
+				var joint = null;
+				
+				if (jointData.join && (jointData.join.A || jointData.join.B)) {
+					if (jointData.join.A) {
+						entityA = this.findConnectedByJoinId(jointData.join.A);
+						if (!entityA) {
+							console.warn('join.A: Invalid joinId');
+						}
+					} else {
+						entityA = this.owner;
+					}
+					
+					if (jointData.join.B) {
+						entityB = this.findConnectedByJoinId(jointData.join.B);
+						if (!entityB) {
+							console.warn('join.B: Invalid joinId');
+						}
+					} else {
+						entityB = this.owner;
+					}
+					
+				} else {
+					console.warn('Joint lacks appropriate join configurations. Does not specify entities to join');
+				}
+				
+				jointDef = new b2DistanceJointDef();
+				
+				jointDef.bodyA = entityA.body;
+				jointDef.bodyB = entityB.body;
+				
+				if (jointData.collideConnected) {
+					jointDef.collideConnected = true;
+				}
+				
+				if (jointData.localAnchorA) {
+					anchorA.Set(jointData.localAnchorA.x / this.drawScale, jointData.localAnchorA.y / this.drawScale);
+					jointDef.localAnchorA = anchorA;
+				}
+				if (jointData.localAnchorB) {
+					anchorB.Set(jointData.localAnchorB.x / this.drawScale, jointData.localAnchorB.y / this.drawScale);
+					jointDef.localAnchorB = anchorB;
+				}
+				
+				jointDef.length = jointData.length || 0;
+				
+				if (typeof jointData.dampingRatio != 'undefined') {
+					jointDef.dampingRatio = jointData.dampingRatio;
+				} else {
+					jointData.dampingRatio = 0.5;
+				}
+				
+				if (typeof jointData.frequencyHz != 'undefined') {
+					jointDef.frequencyHz = jointData.frequencyHz;
+				} else {
+					jointDef.frequencyHz = 10;
+				}
+				
+				jointDef.userData = {};
+				if (jointData.userData) {
+					for (var t in jointData.userData) {
+						jointDef.userData[t] = jointData.userData[t];
+					}
+				}
+				
+				joint = this.world.CreateJoint(jointDef);
+				
+				entityA.triggerEvent('joint-attached', joint);
+				entityB.triggerEvent('joint-attached', joint);
 			}
 		},
 		
