@@ -24,6 +24,7 @@
     left:        50%;
     top:         50%;
     position:    absolute;
+    font-size:   0.2em;
 }
 
 /* This is the canvas used by the handler-render-createjs component */

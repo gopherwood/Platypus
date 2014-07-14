@@ -20,7 +20,7 @@
 	color: white;
 	font-family: arial;
 	font-weight: bold;
-	font-size: 0.7em;
+	font-size: 0.14em;
 	
 	-webkit-user-select: none;
 	-moz-user-select: none;
@@ -88,6 +88,7 @@
 }
 
 .go-left-button {
+	font-size: 0.2em;
 	background: url('../images/buttons.png') 0 0 no-repeat;
 	background-size: 600%;
 	bottom: 0.2em;
@@ -98,6 +99,7 @@
 	background-size: 600%;
 }
 .go-right-button {
+    font-size: 0.2em;
 	background: url('../images/buttons.png') 40% 0 no-repeat;
 	background-size: 600%;
 	bottom: 0.2em;
