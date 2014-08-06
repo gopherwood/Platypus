@@ -134,13 +134,13 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 		constructor: function(definition){
 			var offset = definition.offset || this.owner.nodeOffset || {};
 			
-			this.nodeId = this.owner.nodeId = definition.nodeId || this.owner.nodeId;
+			this.nodeId = this.owner.nodeId = definition.nodeId || this.owner.nodeId || null;
 			
 			this.neighbors = {};
 			this.friendlyNodes = definition.nodes || null;
 			this.friendlyEntities = definition.shares || null;
 			this.speed = definition.speed || 0;
-			this.snapToNodes = definition.snapToNodes || false;
+			this.snapToNodes = definition.snapToNodes || !this.speed;
 			this.updateOrientation = definition.updateOrientation || false;
 			this.distance = 0;
 			this.buffer   = definition.buffer || 0;
@@ -248,8 +248,10 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				entities = null;
 				
 				this.owner.node = this.node = node; //TODO: not sure if this needs to be accessible outside this component.
-				this.node.removeFromEdge(this.owner);
-				if(this.lastNode){
+				if(this.node.removeFromEdge){
+					this.node.removeFromEdge(this.owner);
+				}
+				if(this.lastNode && this.lastNode.removeFromEdge){
 					this.lastNode.removeFromEdge(this.owner);
 				}
 				this.node.addToNode(this.owner);
@@ -282,7 +284,9 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 			},
 			"leave-node": function(){
 				if(this.node){
-					this.node.removeFromNode(this.owner);
+					if(this.node.removeFromNode){
+						this.node.removeFromNode(this.owner);
+					}
 					this.owner.triggerEvent('left-node', this.node);
 					this.owner.triggerEvent('remove-directions');
 				}
@@ -325,17 +329,29 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 					depth        = 20, //arbitrary limit
 					origin       = this.node || this.lastNode,
 					test         = null,
-					steps        = nodesOrNodeType.steps || 0;
+					steps        = 0;
 
-					this.goingToNode = nodesOrNodeType;
-					
-					if(typeof nodesOrNodeType === 'string'){
-						test = checkType;
-					} else if(typeof nodesOrNodeType.type === 'string'){
-						test = checkObjectType;
+					if(!nodesOrNodeType){
+						if(!this.owner.nodeId) {
+							var n = this.owner.parent.getClosestNode(this.owner.x, this.owner.y, this.owner.z);
+							if(n){
+								this.destinationNodes.push(n);
+								return true;
+							}
+						}
+						return false;
 					} else {
-						test = checkList;
+						if(typeof nodesOrNodeType === 'string'){
+							test = checkType;
+						} else if(typeof nodesOrNodeType.type === 'string'){
+							test = checkObjectType;
+						} else {
+							test = checkList;
+						}
 					}
+					
+					steps = nodesOrNodeType.steps || 0;
+					this.goingToNode = nodesOrNodeType;
 					
 					if(origin && nodesOrNodeType && !test(origin, nodesOrNodeType)){
 						travResp = this.traverseNode({
@@ -412,6 +428,10 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 		},
 		
 		methods:{
+			destroy: function(){
+				this.owner.triggerEvent('leave-node');
+			},
+			
 			gotoNode: (function(){
 				var test = function(here, there){
 					return (here === there);
@@ -419,7 +439,7 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				
 				return function(node){
 					var travResp = null,
-					depth = 20, //arbitrary limit
+					depth = 2, //arbitrary limit
 					origin = this.node || this.lastNode;
 					
 					if(!node && this.followEntity){
@@ -580,6 +600,26 @@ This component connects an entity to its parent's [[node-map]]. It manages navig
 				this.node.addToEdge(this.owner);
 				toNode.addToEdge(this.owner);
 				this.owner.triggerEvent('leave-node');
+			}
+		},
+		
+		publicMethods: {
+			getNeighbors: function(){
+				var i     = 0,
+				j         = '',
+				here      = this.node || this.lastNode,
+				map       = here.map,
+				node      = null,
+				neighbors = [];
+				
+				for (j in here.neighbors){
+					node = map.getNode(here.neighbors[j]);
+					for (i = 0; i < node.contains.length; i++){
+						neighbors.push(node.contains[i]);
+					}
+				}
+				
+				return neighbors;
 			}
 		}
 	});

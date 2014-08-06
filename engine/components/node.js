@@ -116,6 +116,16 @@ This component causes an entity to be a position on a [[node-map]]. This compone
 		},
 		
 		publicMethods:{
+			getNeighborNodes: function(){
+				var i = '',
+				neighbors = {};
+				
+				for(i in this.neighbors){
+					neighbors[i] = this.getNode(i);
+				}
+				
+				return neighbors;
+			},
 			getNode: function(desc){
 				var neighbor = null;
 				
