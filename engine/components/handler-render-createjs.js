@@ -267,6 +267,10 @@ A component that handles updating rendering for components that are rendering vi
 				};
 			})(),
 			"camera-update": function(cameraInfo){
+				var dpr = (window.devicePixelRatio || 1),
+				viewportCenterX = cameraInfo.viewportLeft + cameraInfo.viewportWidth / 2,
+				viewportCenterY = cameraInfo.viewportTop + cameraInfo.viewportHeight / 2;
+				
 				this.camera.x = cameraInfo.viewportLeft;
 				this.camera.y = cameraInfo.viewportTop;
 				this.camera.width = cameraInfo.viewportWidth;
@@ -286,8 +290,8 @@ A component that handles updating rendering for components that are rendering vi
 				
 				this.canvas.width  = this.canvas.offsetWidth * dpr;
 				this.canvas.height = this.canvas.offsetHeight * dpr;
-				this.stage.setTransform(-cameraInfo.viewportLeft * cameraInfo.scaleX * dpr, -cameraInfo.viewportTop * cameraInfo.scaleY * dpr, cameraInfo.scaleX * dpr, cameraInfo.scaleY * dpr);
-				
+				this.stage.setTransform((cameraInfo.viewportWidth / 2) * cameraInfo.scaleX * dpr, (cameraInfo.viewportHeight / 2) * cameraInfo.scaleY * dpr, cameraInfo.scaleX * dpr, cameraInfo.scaleY * dpr, (cameraInfo.orientation || 0) * 180 / Math.PI, 0, 0, viewportCenterX, viewportCenterY);
+
 				if(this.moveMouse){
 					this.moveMouse(cameraInfo);
 				}
@@ -376,6 +380,17 @@ A component that handles updating rendering for components that are rendering vi
 				this.owner.canvasParent = null;
 				this.owner.element = null;
 				this.canvas = undefined;
+			}
+		},
+		
+		publicMethods: {
+			getWorldPointFromScreen: function(sp){
+				//document.title = ((sp.y * dpr) / this.stage.scaleY + this.camera.y) + ', ' + ((sp.y / dpr) * this.stage.scaleY + this.camera.y) + ', ' + ((sp.y * dpr) * this.stage.scaleY + this.camera.y) + ', ';
+				
+				return {
+					x: (sp.x * dpr) / this.stage.scaleX + this.camera.x,
+					y: (sp.y * dpr) / this.stage.scaleY + this.camera.y
+				};
 			}
 		}
 	});

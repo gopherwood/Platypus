@@ -34,10 +34,11 @@ This component acts as a simple AI that will chase another entity.
 		id: 'ai-chaser', 
 		
 		constructor: function(definition){
-			this.target = null;
+			this.target = this.owner.target || null;
 			this.piOverTwo = Math.PI / 2;
 			this.prevAngle = 0;
 			this.chasing = true;
+			this.offset = {x: 0, y: 0};
 		},
 
 		events: {// These are messages that this component listens for
@@ -47,8 +48,8 @@ This component acts as a simple AI that will chase another entity.
 					//figure out angle
 					this.owner.trigger('move');
 					var angle = 0;
-					var dX = this.target.x - this.owner.x;
-					var dY = this.target.y - this.owner.y;
+					var dX = this.target.x + this.offset.x - this.owner.x;
+					var dY = this.target.y + this.offset.y - this.owner.y;
 					if (dX == 0)
 					{
 						if (dY > 0) {
@@ -73,6 +74,12 @@ This component acts as a simple AI that will chase another entity.
 			},
 			"set-target": function(entity){
 				this.target = entity;
+				this.offset.x = 0;
+				this.offset.y = 0;
+			},
+			"set-target-offset": function(offset){
+				this.offset.x = offset.x;
+				this.offset.y = offset.y;
 			},
 			"start-chasing": function(){
 				this.chasing = true;

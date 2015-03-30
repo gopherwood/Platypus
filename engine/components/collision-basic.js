@@ -190,8 +190,8 @@ Requires: ["../collision-shape.js", "../aabb.js"]
 				}
 			};
 			
-			entity.relocateEntity = function(x, y){
-				entity.triggerEvent('relocate-entity', {x:x, y:y});
+			entity.relocateEntity = function(vector){
+				entity.triggerEvent('relocate-entity', {position: vector});
 			};
 			
 			entity.movePreviousX = function(x){
@@ -278,6 +278,9 @@ Requires: ["../collision-shape.js", "../aabb.js"]
 			}
 
 			this.immobile  = this.owner.immobile = this.owner.immobile || definition.immobile || false;
+
+			platformer.Vector.assign(this.owner, 'position', 'x', 'y', 'z');
+			platformer.Vector.assign(this.owner, 'previousPosition', 'previousX', 'previousY', 'previousZ');
 			this.owner.previousX = this.owner.previousX || this.owner.x;
 			this.owner.previousY = this.owner.previousY || this.owner.y;
 			
@@ -397,11 +400,9 @@ Requires: ["../collision-shape.js", "../aabb.js"]
 			
 			"relocate-entity": function(resp){
 				if(resp.relative){
-					this.owner.x = this.owner.previousX + resp.x;
-					this.owner.y = this.owner.previousY + resp.y;
+					this.owner.position.set(this.owner.previousPosition).add(resp.position);
 				} else {
-					this.owner.x = resp.x;
-					this.owner.y = resp.y;
+					this.owner.position.set(resp.position);
 				}
 
 				this.aabb.reset();
@@ -410,8 +411,7 @@ Requires: ["../collision-shape.js", "../aabb.js"]
 					this.aabb.include(this.shapes[x].getAABB());
 				}
 
-				this.owner.previousX = this.owner.x;
-				this.owner.previousY = this.owner.y;
+				this.owner.previousPosition.set(this.owner.position);
 			}
 		},
 		
@@ -455,6 +455,42 @@ Requires: ["../collision-shape.js", "../aabb.js"]
 				this.prevAABB.moveX(x);
 				for(var k = 0; k < this.prevShapes.length; k++) {
 					this.prevShapes[k].setXWithEntityX(x);
+				}
+			},
+			
+			destroy: function(){
+				this.owner.parent.trigger('remove-collision-entity', this.owner);
+
+				this.owner.collides = false;
+
+				delete this.aabb;
+				delete this.prevAABB;
+				
+				for(var i = 0; i < this.owner.collisionTypes.length; i++){
+					if(this.owner.collisionTypes[i] === this.collisionType){
+						this.owner.collisionTypes.splice(i,1);
+						break;
+					}
+				}
+				if(this.owner.solidCollisions[this.collisionType]){
+					this.owner.solidCollisions[this.collisionType].length = 0;
+					delete this.owner.solidCollisions[this.collisionType];
+				}
+				for(var i in this.owner.solidCollisions){
+					this.owner.collides = true;
+				}
+				if(this.owner.softCollisions[this.collisionType]){
+					this.owner.softCollisions[this.collisionType].length = 0;
+					delete this.owner.softCollisions[this.collisionType];
+				}
+				delete this.owner.collisionFunctions[this.collisionType];
+				
+				this.shapes.length = 0;
+				this.prevShapes.length = 0;
+				delete this.entities;
+
+				if(this.owner.collisionTypes.length){
+					this.owner.parent.trigger('add-collision-entity', this.owner);
 				}
 			}
 		}

@@ -309,11 +309,19 @@ This component is attached to entities that will appear in the game world. It re
 				// Convert image names into Image resources
 				for (i = 0; i < ss.images.length; i++){
 					if(typeof ss.images[i] === 'string'){
-						ss.images[i] = platformer.assets[ss.images[i]];
-
-						// Check here whether to scale coordinates in the frame setup section.
-						if(!scaled && ((ss.images[i].scaleX && (ss.images[i].scaleX !== 1)) || (ss.images[i].scaleY && (ss.images[i].scaleY !== 1)))){
-							scaled = true;
+						if(platformer.assets[ss.images[i]]){
+							ss.images[i] = platformer.assets[ss.images[i]];
+							
+							// Check here whether to scale coordinates in the frame setup section.
+							if(!scaled && ((ss.images[i].scaleX && (ss.images[i].scaleX !== 1)) || (ss.images[i].scaleY && (ss.images[i].scaleY !== 1)))){
+								scaled = true;
+							}
+						} else {
+							if(platformer.settings.supports.iOS){
+								console.warn('"' + entity.type + '" render component: "' + ss.images[i] + '" is not a loaded asset. Make sure the image is not too large for iOS Safari.'); //Convenient check here: http://www.williammalone.com/articles/html5-javascript-ios-maximum-image-size/
+							} else {
+								console.warn('"' + entity.type + '" render component: "' + ss.images[i] + '" is not a loaded asset.');
+							}
 						}
 					}
 				}
@@ -455,6 +463,7 @@ This component is attached to entities that will appear in the game world. It re
 				this.rotate     = definition.rotate || false;
 				this.mirror     = definition.mirror || false;
 				this.flip       = definition.flip   || false;
+				this.scale      = (definition.scale !== false);
 				this.stateBased = map && (definition.stateBased !== false);
 				this.eventBased = map && (definition.eventBased !== false);
 				this.hover      = false;
@@ -465,6 +474,9 @@ This component is attached to entities that will appear in the game world. It re
 				
 				this.initialScaleX   = definition.scaleX || 1;
 				this.initialScaleY   = definition.scaleY || 1;
+				if(definition.facing === 'left'){
+					this.initialScaleX = -this.initialScaleX;
+				}
 				this.imageScaleX     = ss.definition.images[0].scaleX || 1;
 				this.imageScaleY     = ss.definition.images[0].scaleY || 1;
 				this.lastOwnerScaleX = this.owner.scaleX = this.owner.scaleX || 1;
@@ -494,8 +506,8 @@ This component is attached to entities that will appear in the game world. It re
 				 * CreateJS Sprite created here:
 				 */
 				this.sprite = new createjs.Sprite(ss.spritesheet, this.currentAnimation || 0);
-				this.sprite.addEventListener('animationend', function(animationInstance, type, lastAnimation, next){
-					self.owner.trigger('animation-ended', lastAnimation);
+				this.sprite.addEventListener('animationend', function(animationInstance){
+					self.owner.trigger('animation-ended', animationInstance);
 					if(self.waitingAnimation){
 						self.currentAnimation = self.waitingAnimation;
 						self.waitingAnimation = false;
@@ -713,7 +725,7 @@ This component is attached to entities that will appear in the game world. It re
 						this.container.skewY = this.skewY;
 					}
 					
-					if (this.owner.scaleX != this.lastOwnerScaleX || this.owner.scaleY != this.lastOwnerScaleY) {
+					if (this.scale && (this.owner.scaleX != this.lastOwnerScaleX || this.owner.scaleY != this.lastOwnerScaleY)) {
 						this.container.scaleX = this.initialScaleX * this.owner.scaleX;
 						this.container.scaleY = this.initialScaleY * this.owner.scaleY;
 						this.sprite.scaleX /= this.imageScaleX;

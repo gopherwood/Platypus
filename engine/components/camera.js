@@ -2,6 +2,8 @@
 # COMPONENT **camera**
 This component controls the game camera deciding where and how it should move. The camera also broadcasts messages when the window resizes or its orientation changes.
 
+If either worldWidth and worldHeight is set to 0 it is assumed the world is infinite in that dimension. 
+
 ## Dependencies:
 - **rootElement** property (on entity) - This component requires a DOM element which it uses as the "window" determining the camera's aspect ratio and size.
 
@@ -31,6 +33,12 @@ This component controls the game camera deciding where and how it should move. T
   - @param message ([[Entity]]} - Expects an entity as the message object to determine whether to trigger `camera-update` on it.
 - **child-entity-removed** - If children are removed from the entity, they are also removed from this component.
   - @param message ([[Entity]]} - Expects an entity as the message object to determine the entity to remove from its list.
+- **shake** - On receiving this message, the camera will shake around its target location.
+  - @param message.xMagnitude (number) - Optional. How much to move along the x axis.
+  - @param message.yMagnitude (number) - Optional. How much to move along the y axis.
+  - @param message.xFrequency (number) - Optional. How quickly to shake along the x axis.
+  - @param message.yFrequency (number) - Optional. How quickly to shake along the y axis.
+  - @param message.time (number) - Optional. How long the camera should shake.
 
 ### Child Broadcasts:
 - **camera-loaded** - On receiving a "world-loaded" message, the camera broadcast the world size to all children in the world.
@@ -70,6 +78,12 @@ This component controls the game camera deciding where and how it should move. T
       "height": 100,
       // Optional number specifying height of viewport in world coordinates
       
+      "worldWidth": 800,
+      // Optional number specifying width of the world in units. Defaults to 0.
+      
+      "worldHeight": 100,
+      // Optional number specifying height of the world in units. Defaults to 0.
+      
       "stretch": true,
       // Optional boolean value that determines whether the camera should stretch the world viewport when window is resized. Defaults to false which maintains the proper aspect ratio.
       
@@ -82,8 +96,14 @@ This component controls the game camera deciding where and how it should move. T
       "transitionY": 400,
       // Optional. Sets how quickly the camera should pan to a new position in the vertical direction. Default is 600.
       
-      "threshold": 3
+      "transitionAngle": 400,
+      // Optional. Sets how quickly the camera should rotate to a new orientation. Default is 600.
+      
+      "threshold": 3,
       // Optional. Sets how many units the followed entity can move before the camera will re-center. Default is 1.
+      
+      "rotate": false
+      // Optional. Whether, when following an entity, the camera should rotate to match the entity's orientation. Default is `false`.
     }
 */
 (function(){
@@ -108,7 +128,7 @@ This component controls the game camera deciding where and how it should move. T
 		self.windowPerWorldUnitWidth  = self.window.viewportWidth / self.world.viewportWidth;
 		self.windowPerWorldUnitHeight = self.window.viewportHeight/ self.world.viewportHeight;
 		
-		self.windowResized = true;
+		self.viewportUpdate = true;
 	};
 
 	return platformer.createComponentClass({
@@ -119,13 +139,19 @@ This component controls the game camera deciding where and how it should move. T
 			// on resize should the view be stretched or should the world's initial aspect ratio be maintained?
 			this.stretch = definition.stretch || false;
 			
+			this.rotate = definition.rotate || false;
+			
 			this.transitionX = definition.transitionX || definition.transition;
 			this.transitionY = definition.transitionY || definition.transition;
+			this.transitionAngle = definition.transitionAngle || definition.transition;
 			if(isNaN(this.transitionX)){
 				this.transitionX = 400;
 			}
 			if(isNaN(this.transitionY)){
 				this.transitionY = 600;
+			}
+			if(isNaN(this.transitionAngle)){
+				this.transitionAngle = 400;
 			}
 
 			this.threshold = definition.threshold || 1;
@@ -141,10 +167,11 @@ This component controls the game camera deciding where and how it should move. T
 			
 			//The dimensions of the camera in the game world
 			this.world = {
-				viewportWidth:       definition.width       || 0,
-				viewportHeight:      definition.height      || 0,
+				viewportWidth:       this.owner.width  || definition.width       || 0,
+				viewportHeight:      this.owner.height || definition.height      || 0,
 				viewportLeft:        definition.left        || 0,
-				viewportTop:         definition.top         || 0
+				viewportTop:         definition.top         || 0,
+				viewportOrientation: definition.orientation || 0
 			};
 			
 			this.message = { //defined here so it can be reused
@@ -153,7 +180,8 @@ This component controls the game camera deciding where and how it should move. T
 				viewportLeft:   0,
 				viewportTop:    0,
 				scaleX: 0,
-				scaleY: 0
+				scaleY: 0,
+				orientation: 0
 			};
 	
 			// on resize should the game snap to certain sizes or should it be fluid?
@@ -182,15 +210,20 @@ This component controls the game camera deciding where and how it should move. T
 			//Forward Follow
 			this.lastLeft = this.world.viewportLeft;
 			this.lastTop = this.world.viewportTop;
+			this.lastOrientation = this.world.viewportOrientation;
 			this.forwardX = 0;
 			this.forwardY = 0;
+			this.forwardAngle = 0;
 			this.averageOffsetX = 0;
 			this.averageOffsetY = 0;
+			this.averageOffsetAngle = 0;
 			this.offsetX = 0;
 			this.offsetY = 0;
+			this.offsetAngle = 0;
 			this.forwardFollower = {
 				x: this.lastLeft,
-				y: this.lastTop
+				y: this.lastTop,
+				orientation: this.lastOrientation
 			};
 			
 			this.lastFollow = {
@@ -201,10 +234,22 @@ This component controls the game camera deciding where and how it should move. T
 				begin: 0
 			};
 			
+			this.shakeOffsetX = 0;
+			this.shakeOffsetY = 0;
+			
+			this.xMagnitude = 0;
+			this.yMagnitude = 0;
+			this.xWaveLength = 0;
+			this.yWaveLength = 0;
+			this.xShakeTime = 0;
+			this.yShakeTime = 0;
+			this.shakeTime = 0;
+			this.shakeIncrementor = 0;
+			
 			this.direction = true;
 			this.stationary = false;
 			
-			this.newChild = false;
+			this.viewportUpdate = false;
 		},
 		events: {
 			"load": function(){
@@ -218,7 +263,7 @@ This component controls the game camera deciding where and how it should move. T
 				{
 					if (messageIds[x] == 'camera-update') {
 						this.entities.push(entity);
-						this.newChild = true;
+						this.viewportUpdate = true;
 						
 						if(this.worldIsLoaded){
 							entity.trigger('camera-loaded', {
@@ -252,45 +297,63 @@ This component controls the game camera deciding where and how it should move. T
 					this.entities[x].trigger('camera-loaded', values);
 				}
 			},
-			"tick": function(resp){
-				var broadcastUpdate = this.newChild;
-				
-				this.newChild = false;
-				
+			"tick": function(resp){		
 				switch (this.state)
 				{
 				case 'following':
-					broadcastUpdate = this.followingFunction(this.following, resp.delta);
+					if (this.followingFunction(this.following, resp.delta)) {
+						this.viewportUpdate = true;
+					}
 					break;
 				case 'static':
 				default:
 					break;
 				}
 				
-				if(broadcastUpdate || this.windowResized){
+				if(this.viewportUpdate){
+					this.viewportUpdate = false;
 					this.stationary = false;
 					
-					this.message.viewportLeft   = this.world.viewportLeft;
-					this.message.viewportTop    = this.world.viewportTop;
+					if (this.shakeIncrementor < this.shakeTime ) {
+						this.viewportUpdate = true;
+						this.shakeIncrementor += resp.delta;
+						this.shakeIncrementor = Math.min(this.shakeIncrementor, this.shakeTime);
+						
+						if (this.shakeIncrementor < this.xShakeTime) {
+							this.shakeOffsetX = Math.sin((this.shakeIncrementor / this.xWaveLength) * (Math.PI * 2)) * this.xMagnitude;
+						} else {
+							this.shakeOffsetX = 0;
+						}
+						
+						if (this.shakeIncrementor < this.yShakeTime) {
+							this.shakeOffsetY = Math.sin((this.shakeIncrementor / this.yWaveLength) * (Math.PI * 2)) * this.yMagnitude;
+						} else {
+							this.shakeOffsetY = 0;
+						}
+					}
+					
+					this.message.viewportLeft   = this.world.viewportLeft + this.shakeOffsetX;
+					this.message.viewportTop    = this.world.viewportTop + this.shakeOffsetY;
 					this.message.viewportWidth  = this.world.viewportWidth;
 					this.message.viewportHeight = this.world.viewportHeight;
 					this.message.scaleX         = this.windowPerWorldUnitWidth;
 					this.message.scaleY         = this.windowPerWorldUnitHeight;
-
-					this.windowResized = false;
+					this.message.orientation    = this.world.viewportOrientation;
 					this.owner.trigger('camera-update', this.message);
 
-					if(broadcastUpdate){
-						for (var x = this.entities.length - 1; x > -1; x--)
-						{
-							if(!this.entities[x].trigger('camera-update', this.message)){
-								this.entities.splice(x, 1);
-							}
+					
+					for (var x = this.entities.length - 1; x > -1; x--)
+					{
+						if(!this.entities[x].trigger('camera-update', this.message)){
+							this.entities.splice(x, 1);
 						}
 					}
+					
 				} else if (!this.stationary){
+					
 					this.owner.trigger('camera-stationary', this.message);
 					this.stationary = true;
+					
 				}
 				
 				if(this.lastFollow.begin){
@@ -302,11 +365,52 @@ This component controls the game camera deciding where and how it should move. T
 			"resize": function(){
 				resize(this);
 			},
+			"relocate": function(loc){
+				if (this.move(loc.x, loc.y)) {
+					this.viewportUpdate = true;
+				}
+				
+			},
 			"orientationchange": function(){
 				resize(this);
 			},
 			"follow": function (def){
 				this.follow(def);
+			},
+			"shake": function(shakeDef) {
+				var def = shakeDef || {},
+					xMag    = def.xMagnitude || 0,
+					yMag    = def.yMagnitude || 0,
+					xFreq   = def.xFrequency || 0, //Cycles per second
+					yFreq   = def.yFrequency || 0, //Cycles per second
+					time    = def.time || 0;
+				
+				this.viewportUpdate = true;
+				
+				this.shakeOffsetX = 0;
+				this.shakeOffsetY = 0;
+				this.shakeIncrementor = 0;
+				
+				this.xMagnitude = xMag;
+				this.yMagnitude = yMag;
+				
+				if (xFreq == 0) {
+					this.xWaveLength = 1;
+					this.xShakeTime = 0;
+				} else {
+					this.xWaveLength = (1000 / xFreq);
+					this.xShakeTime = Math.ceil(time / this.xWaveLength) * this.xWaveLength;
+				}
+				
+				if (yFreq == 0) {
+					this.yWaveLength = 1;
+					this.yShakeTime = 0;
+				} else {
+					this.yWaveLength = (1000 / yFreq);
+					this.yShakeTime = Math.ceil(time / this.yWaveLength) * this.yWaveLength;
+				}
+				
+				this.shakeTime = Math.max(this.xShakeTime, this.yShakeTime);
 			}
 		},
 		
@@ -335,6 +439,7 @@ This component controls the game camera deciding where and how it should move. T
 					this.followingFunction = this.lockedFollow;
 					this.offsetX = def.offsetX || 0;
 					this.offsetY = def.offsetY || 0;
+					this.offsetAngle = def.offsetAngle || 0;
 					break;
 				case 'forward':
 					this.state = 'following';
@@ -342,12 +447,15 @@ This component controls the game camera deciding where and how it should move. T
 					this.following = def.entity;
 					this.lastLeft  = def.entity.x || 0;
 					this.lastTop   = def.entity.y || 0;
+					this.lastorientation = def.entity.orientation || 0;
 					this.forwardX  = def.movementX || (this.transitionX / 10);
-					this.forwardY  = def.movementY || 0;
+					this.forwardY  = def.movementY || (this.transitionY / 10);
 					this.averageOffsetX = 0;
 					this.averageOffsetY = 0;
+					this.averageOffsetAngle = 0;
 					this.offsetX = def.offsetX || 0;
 					this.offsetY = def.offsetY || 0;
+					this.offsetAngle = def.offsetAngle || 0;
 					this.followingFunction = this.forwardFollow;
 					break;
 				case 'bounding':
@@ -355,6 +463,7 @@ This component controls the game camera deciding where and how it should move. T
 					this.following = def.entity;
 					this.offsetX = def.offsetX || 0;
 					this.offsetY = def.offsetY || 0;
+					this.offsetAngle = def.offsetAngle || 0;
 					this.setBoundingArea(def.top, def.left, def.width, def.height);
 					this.followingFunction = this.boundingFollow;
 					break;
@@ -364,7 +473,8 @@ This component controls the game camera deciding where and how it should move. T
 					this.following = undefined;
 					this.followingFunction = undefined;
 					if(def && (typeof def.top === 'number') && (typeof def.left === 'number')){
-						this.move(def.left, def.top);
+						this.move(def.left, def.top, def.orientation || 0);
+						this.viewportUpdate = true;
 					}
 					break;
 				}
@@ -375,19 +485,22 @@ This component controls the game camera deciding where and how it should move. T
 
 			},
 			
-			move: function (newLeft, newTop){
+			move: function (newLeft, newTop, newOrientation){
 				var moved = this.moveLeft(newLeft);
 				moved = this.moveTop(newTop) || moved;
+				if(this.rotate){
+					moved = this.reorient(newOrientation || 0) || moved;
+				}
 				return moved;
 			},
 			
 			moveLeft: function (newLeft){
 				if(Math.abs(this.world.viewportLeft - newLeft) > this.threshold){
-					if (this.worldWidth < this.world.viewportWidth){
+					if (this.worldWidth && this.worldWidth != 0 && this.worldWidth < this.world.viewportWidth){
 						this.world.viewportLeft = (this.worldWidth - this.world.viewportWidth) / 2;
-					} else if (this.worldWidth && (newLeft + this.world.viewportWidth > this.worldWidth)) {
+					} else if (this.worldWidth && this.worldWidth != 0 && (newLeft + this.world.viewportWidth > this.worldWidth)) {
 						this.world.viewportLeft = this.worldWidth - this.world.viewportWidth;
-					} else if (this.worldWidth && (newLeft < 0)) {
+					} else if (this.worldWidth && this.worldWidth != 0 && (newLeft < 0)) {
 						this.world.viewportLeft = 0; 
 					} else {
 						this.world.viewportLeft = newLeft;
@@ -399,11 +512,11 @@ This component controls the game camera deciding where and how it should move. T
 			
 			moveTop: function (newTop) {
 				if(Math.abs(this.world.viewportTop - newTop) > this.threshold){
-					if (this.worldHeight < this.world.viewportHeight){
+					if (this.worldHeight && this.worldHeight != 0 && this.worldHeight < this.world.viewportHeight){
 						this.world.viewportTop = (this.worldHeight - this.world.viewportHeight) / 2;
-					} else if (this.worldHeight && (newTop + this.world.viewportHeight > this.worldHeight)) {
+					} else if (this.worldHeight && this.worldHeight != 0 && (newTop + this.world.viewportHeight > this.worldHeight)) {
 						this.world.viewportTop = this.worldHeight - this.world.viewportHeight;
-					} else if (this.worldHeight && (newTop < 0)) {
+					} else if (this.worldHeight && this.worldHeight != 0 && (newTop < 0)) {
 						this.world.viewportTop = 0; 
 					} else {
 						this.world.viewportTop = newTop;
@@ -414,28 +527,50 @@ This component controls the game camera deciding where and how it should move. T
 				return false;
 			},
 			
-			lockedFollow: function (entity, time, slowdown){
-				var newLeft = entity.x - (this.world.viewportWidth / 2),
-				newTop      = entity.y - (this.world.viewportHeight / 2),
-				ratioX      = (this.transitionX?Math.min(time / this.transitionX, 1):1),
-				iratioX     = 1 - ratioX,
-				ratioY      = (this.transitionY?Math.min(time / this.transitionY, 1):1),
-				iratioY     = 1 - ratioY;
-
-				return this.move(ratioX * newLeft + iratioX * this.world.viewportLeft, ratioY * newTop + iratioY * this.world.viewportTop);
+			reorient: function (newOrientation) {
+				if(Math.abs(this.world.viewportOrientation - newOrientation) > 0.0001){
+					this.world.viewportOrientation = newOrientation;
+					return true;
+				}
+				return false;
 			},
+			
+			lockedFollow: (function(){
+				var min = Math.min;
+				getTransitionalPoint = function(a, b, ratio){
+					// Find point between two points according to ratio.
+					return ratio * b + (1 - ratio) * a;
+				},
+				getRatio = function(transition, time){
+					// Look at the target transition time (in milliseconds) and set up ratio accordingly.
+					if(transition){
+						return min(time / transition, 1);
+					} else {
+						return 1;
+					}
+				};
+				
+				return function (entity, time, slowdown){
+					var x = getTransitionalPoint(this.world.viewportLeft,        entity.x - (this.world.viewportWidth / 2),  getRatio(this.transitionX,     time)),
+					y     = getTransitionalPoint(this.world.viewportTop,         entity.y - (this.world.viewportHeight / 2), getRatio(this.transitionY,     time));
+
+					if(this.rotate){ // Only run the orientation calculations if we need them.
+						return this.move(x, y, getTransitionalPoint(this.world.viewportOrientation, -(entity.orientation || 0), getRatio(this.transitionAngle, time)));
+					} else {
+						return this.move(x, y, 0);
+					}
+				};
+			})(),
 			
 			forwardFollow: function (entity, time){
 				var ff = this.forwardFollower,
 				standardizeTimeDistance = 15 / time, //This allows the camera to pan appropriately on slower devices or longer ticks
 				moved  = false,
 				x = entity.x + this.offsetX,
-				y = entity.y + this.offsetY;
+				y = entity.y + this.offsetY,
+				a = (entity.orientation || 0) + this.offsetAngle;
 				
 				if(this.followFocused && (this.lastLeft === x) && (this.lastTop === y)){
-//					ff.x = this.world.viewportLeft + (this.world.viewportWidth  / 2); 
-//					ff.y = this.world.viewportTop  + (this.world.viewportHeight / 2); 
-
 					return this.lockedFollow(ff, time);
 				} else {
 					// span over last 10 ticks to prevent jerkiness
@@ -451,11 +586,21 @@ This component controls the game camera deciding where and how it should move. T
 						this.averageOffsetY = 0;
 					}
 					
+					if(this.rotate){
+						this.averageOffsetAngle *= 0.9;
+						this.averageOffsetAngle += 0.1 * (a - this.lastOrientation) * standardizeTimeDistance;
+						if (Math.abs(this.averageOffsetAngle) > (this.world.viewportOrientation / (this.forwardAngle * 2))){
+							this.averageOffsetAngle = 0;
+						}
+					}
+
 					ff.x = this.averageOffsetX * this.forwardX + x;
 					ff.y = this.averageOffsetY * this.forwardY + y;
+					ff.orientation = this.averageOffsetAngle * this.forwardAngle + a;
 					
 					this.lastLeft = x;
 					this.lastTop  = y;
+					this.lastOrientation = a;
 					
 					moved = this.lockedFollow(ff, time);
 

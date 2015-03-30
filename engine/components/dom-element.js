@@ -101,7 +101,13 @@ This component creates a DOM element associated with the entity. In addition to 
 					}
 				} else if(((i !== 'type') || (elementType === 'input')) && (i !== 'element') && (i !== 'parent') && (i !== 'updateClassName') && (i !== 'attributes') && (i !== 'messageMap')){
 					if(i.indexOf('on') === 0){
-						this.element[i] = createFunction(definition[i], this.owner);
+						if (platformer.game.settings.supports.mobile) {
+							if ( i.indexOf('onmouse') == -1) {
+								this.element[i] = createFunction(definition[i], this.owner);
+							}
+						} else {
+							this.element[i] = createFunction(definition[i], this.owner);
+						}
 					} else {
 						this.element[i] = definition[i];
 						if(i == 'className'){
@@ -170,6 +176,9 @@ This component creates a DOM element associated with the entity. In addition to 
 				}
 				this.parentElement = element;
 				this.parentElement.appendChild(this.element);
+			},
+			
+			"handle-logic": function(resp){
 			},
 			
 			"handle-render": function(resp){

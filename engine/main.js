@@ -2,7 +2,7 @@
 # Main.js
 Main.js creates the game object. Main.js is called on the window 'load' event.
 
- Requires: ["browser.js", "game.js", "http://code.createjs.com/createjs-2013.12.12.min.js", "factory.js"]
+ Requires: ["https://code.createjs.com/createjs-2014.12.12.min.js", "browser.js","game.js","factory.js"]
 
 */
 
@@ -25,8 +25,10 @@ Main.js creates the game object. Main.js is called on the window 'load' event.
 })(window);
 
 window.addEventListener('load', function(){
+	
 	// This creates the game once the page is loaded. If the game should not appear on page load, global setting "autoLoad" needs to be set to `false` and game must be created independently.
 	if(platformer.settings && platformer.settings.global && (platformer.settings.global.autoLoad !== false)){
 		new platformer.Game(platformer.settings);
 	}
 }, false);
+

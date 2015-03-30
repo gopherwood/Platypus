@@ -77,14 +77,16 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 [link2]: http://www.createjs.com/Docs/SoundJS/SoundJS.html#method_play
 */
 (function(){
-	var defaultSettings = {
+	var channels = {},
+	defaultSettings = {
 		interrupt: createjs.Sound.INTERRUPT_ANY, //INTERRUPT_ANY, INTERRUPT_EARLY, INTERRUPT_LATE, or INTERRUPT_NONE
 		delay:     0,
 		offset:    0,
 		loop:      0,
 		volume:    1,
 		pan:       0,
-		length:    0,
+		mute:      false,
+		paused:    false,		
 		next:      false,
 		events:    false
 	},
@@ -92,14 +94,25 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 		stop: true,
 		playthrough: true
 	},
+	audioInProgress = function(channel){
+		var list = channels[channel];
+			
+		if(!list || !list.length){
+			return false;
+		}
+		for (var i in list){
+			if(list[i].priorityTrack){
+				return list[i].priorityTrack;
+			}
+		}
+		return false;
+	},
 	sortByTime = function(a,b){
 		return a.time - b.time;
 	},
 	playSound = function(soundDefinition){
 		var sound = '',
-		attributes = undefined,
-		instance = null,
-		assets = platformer.game.settings.assets;
+		attributes = undefined;
 		if(typeof soundDefinition === 'string'){
 			sound      = soundDefinition;
 			attributes = {};
@@ -131,95 +144,103 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 				loop:      soundDefinition.loop,
 				volume:    soundDefinition.volume,
 				pan:       soundDefinition.pan,
-				length:    soundDefinition.length,
+				startTime: soundDefinition.startTime,
+				duration:  soundDefinition.duration,
+				mute:      soundDefinition.mute,
+				paused:    soundDefinition.paused,
 				next:      soundDefinition.next,
 				events:    soundDefinition.events
 			};
 		}
-		if(assets[sound]){
-			if(assets[sound].data){
-				for(var item in assets[sound].data){
-					attributes[item] = attributes[item] || assets[sound].data[item];
-				}
-			}
-			if(assets[sound].assetId){
-				sound = assets[sound].assetId;
-			}
-			return function(value){
-				var self = this,
-				audio = undefined,
-				next = false,
-				events = false,
-				offset = defaultSettings.offset,
-				length    = 0;
 
-				value = value || attributes;
-				if(value && value.stop){
-					if(instance) {
-						if(value.playthrough){
-							instance.remainingLoops = 0;
-						} else {
-							instance.stop();
-							self.removeClip(instance);
-						}
-					}
+		return function(value){
+			var self = this,
+			audio = undefined,
+			next = false,
+			events = false,
+			willOverlap = audioInProgress(this.channel);
+			
+			if((this.preventOverlaps !== 'ignore') && willOverlap){
+				if(this.priority >= willOverlap.priority){
+					willOverlap.component.stopAudio();
+				} else if(this.preventOverlaps === 'append'){
+					willOverlap.next.push(soundDefinition);
+					return ;
 				} else {
-					if(value){
-						var interrupt = value.interrupt || attributes.interrupt || defaultSettings.interrupt,
-						delay         = value.delay     || attributes.delay  || defaultSettings.delay,
-						loop          = value.loop      || attributes.loop   || defaultSettings.loop,
-						volume        = (typeof value.volume !== 'undefined')? value.volume: ((typeof attributes.volume !== 'undefined')? attributes.volume: defaultSettings.volume),
-						pan           = value.pan       || attributes.pan    || defaultSettings.pan,
-						length        = value.length    || attributes.length || defaultSettings.length;
-
-						offset        = value.offset    || attributes.offset || defaultSettings.offset;
-						next          = value.next      || attributes.next   || defaultSettings.next;
-						events        = value.events    || attributes.events || defaultSettings.events;
-
-						audio = instance = createjs.Sound.play(sound, interrupt, delay, offset, loop, volume, pan);
-
-					} else {
-						audio = instance = createjs.Sound.play(sound, defaultSettings.interrupt, defaultSettings.delay, defaultSettings.offset, defaultSettings.loop, defaultSettings.volume, defaultSettings.pan);
-					}
-
-					if(events){
-						audio.sequenceEvents = [];
-						for(var i = 0; i < events.length; i++){
-							audio.sequenceEvents.push({
-								event: events[i].event,
-								time: +events[i].time + offset,
-								message: events[i].message
-							});
-						}
-						audio.sequenceEvents.sort(sortByTime);
-					}
-
-					audio.addEventListener('complete', function(){
-						self.onComplete(audio, next);
-					});
-
-					if(audio.playState === 'playFailed'){
-						if(this.owner.debug){
-							console.warn('Unable to play "' + sound + '".', audio);
-						}
-					} else {
-						if(length){ // Length is specified so we need to turn off the sound at some point.
-							this.timedAudioClips.push({length: length, progress: 0, audio: audio, next: next});
-						}
-						this.activeAudioClips.push(audio);
-					}
+					return ;
 				}
-			};
-		} else {
-			console.warn('Audio clip "' + sound + '" needs to be added to config.js.');
-			return function(){
-			};
-		}
+			}
+
+			value = value || attributes;
+			if(value.stop){
+				this.stopAudio(sound, value.playthrough);
+			} else {
+				audio = createjs.Sound.createInstance(sound, value.startTime || attributes.startTime || null, value.duration || attributes.duration || null);
+				
+				// Adding object on to SoundInstance for delayed playback and storing properties apart from instance due to channel overrides.
+				audio.options = {
+					interrupt:  value.interrupt || attributes.interrupt || defaultSettings.interrupt,
+					delay:      value.delay     || attributes.delay  || defaultSettings.delay,
+					loop:       value.loop      || attributes.loop   || defaultSettings.loop,
+					offset:     value.offset    || attributes.offset || defaultSettings.offset,
+					volume:     (typeof value.volume !== 'undefined')? value.volume: ((typeof attributes.volume !== 'undefined')? attributes.volume: defaultSettings.volume),
+					pan:        value.pan       || attributes.pan    || defaultSettings.pan,
+					mute:       value.mute      || attributes.mute   || defaultSettings.mute,
+					paused:     value.paused    || attributes.paused || defaultSettings.paused
+				};
+				
+				next          = value.next      || attributes.next   || defaultSettings.next;
+				events        = value.events    || attributes.events || defaultSettings.events;
+
+				if(!this.mixer.paused && !this.channelSettings.paused && !audio.options.paused){
+					audio.play(audio.options);
+				} else {
+					audio.options.unplayed = true;
+				}
+				this.setChannelSettings(audio);
+				
+				if(this.preventOverlaps && (this.preventOverlaps !== 'ignore')){
+					this.priorityTrack = {
+						audio: audio,
+						component: this,
+						priority: this.priority,
+						next: next || []
+					};
+				}
+
+				if(events){
+					audio.sequenceEvents = [];
+					for(var i = 0; i < events.length; i++){
+						audio.sequenceEvents.push({
+							event: events[i].event,
+							time: events[i].time || 0,
+							message: events[i].message
+						});
+					}
+					audio.sequenceEvents.sort(sortByTime);
+				}
+
+				audio.addEventListener('complete', function(){
+					self.onComplete(audio, next);
+				});
+
+				if(audio.playState === 'playFailed'){
+					if(this.owner.debug){
+						console.warn('Unable to play "' + sound + '".', audio);
+					}
+					this.onComplete(audio, next);
+				} else {
+					audio.soundId = sound;
+					this.activeAudioClips.push(audio);
+				}
+			}
+		};
 	},
-	createTest = function(testStates, audio){
+	createTest = function(testStates, audio, play){
 		var states = testStates.replace(/ /g, '').split(',');
 		if(testStates === 'default'){
 			return function(state){
+				play.call(this);
 				return testStates;
 			};
 		} else {
@@ -229,6 +250,7 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 						return false;
 					}
 				}
+				play.call(this);
 				return testStates;
 			};
 		}
@@ -238,7 +260,10 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 		id: 'audio',
 			
 		constructor: function(definition){
-			this.timedAudioClips = [];
+			var playClip = null;
+			
+			this.channel = definition.channel || 'default';
+
 			this.activeAudioClips = [];		
 	
 			this.state = {};
@@ -253,51 +278,91 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 			if(definition.audioMap){
 				this.checkStates = [];
 				for (var key in definition.audioMap){
-					this.addEventListener(key, playSound(definition.audioMap[key]));
-					this.checkStates.push(createTest(key, definition.audioMap[key]));
+					playClip = playSound(definition.audioMap[key]);
+					this.addEventListener(key, playClip);
+					this.checkStates.push(createTest(key, definition.audioMap[key], playClip));
 				}
 			}
+			
+			if(definition.preventOverlaps) {
+				this.preventOverlaps = definition.preventOverlaps;
+				if(this.preventOverlaps !== 'ignore'){
+					if(!channels[this.channel]){
+						channels[this.channel] = [];
+					}
+					channels[this.channel].push(this);
+				}
+			}
+			
+			this.priority = definition.priority || 0;
+			this.priorityTrack = null;
+			
+			if(!platformer.game.audioMixer){
+				platformer.game.audioMixer = {
+					channels: {},
+					paused: false,
+					getChannel: function(id){
+						if(!this.channels[id]){
+							this.channels[id] = {
+								volume: 1,
+								mute: false,
+								paused: false,
+								pan: 0,
+								update: 0
+							};
+						}
+
+						return this.channels[id];
+					}
+				};
+			}
+			this.mixer           = platformer.game.audioMixer;
+			this.channelSettings = this.mixer.getChannel(this.channel);
+			this.channelUpdate   = this.channelSettings.update;
+			this.paused          = this.mixer.paused;
 		},
 
 		events: {// These are messages that this component listens for
 		    "handle-render": function(resp){
-				var i     = 0,
+				var self  = this,
+				i         = 0,
 				audioClip = undefined;
-				newArray  = undefined;
 				
-				for(i = 0; i < this.activeAudioClips.length; i++){
-					this.checkTimeEvents(this.activeAudioClips[i]);
+				if(this.paused !== this.mixer.paused){
+					this.paused = this.mixer.paused;
+		 			this.getAllClips(function(clip){
+						self.setChannelSettings(clip);
+		 			});
+		 			// Avoid potential channel check below since we've already handled this for the global pause.
+					this.channelUpdate = this.channelSettings.update;
+				}
+				if(this.paused){
+					return;
 				}
 				
-				if(this.timedAudioClips.length){
-					newArray = this.timedAudioClips;
-					this.timedAudioClips = [];
-					for (i in newArray){
-						audioClip = newArray[i];
-						audioClip.progress += resp.delta;
-						if(audioClip.progress >= audioClip.length){
-							audioClip.audio.stop();
-							this.onComplete(audioClip.audio, audioClip.next);
-						} else {
-							this.timedAudioClips.push(audioClip);
-						}
-					}
-//						this.timedAudioClips = newArray;
+				if(this.channelUpdate !== this.channelSettings.update){
+					//Channel settings have changed.
+					this.channelUpdate = this.channelSettings.update;
+					
+		 			this.getAllClips(function(clip){
+						self.setChannelSettings(clip);
+		 			});
 				}
+				
+	 			this.getAllClips(function(clip){
+					self.checkTimeEvents(clip);
+	 			});
 
-				i = 0;
 				if(this.stateChange){
 					if(this.checkStates){
 						if(this.currentState){
-							stop.playthrough = this.forcePlaythrough;
-							this[this.currentState](stop);
+							this.stopAudio(this.currentState.soundId, this.forcePlaythrough);
 						}
 						this.currentState = false;
-						for(; i < this.checkStates.length; i++){
-							audioClip = this.checkStates[i](this.state);
+						for(i = 0; i < this.checkStates.length; i++){
+							audioClip = this.checkStates[i].call(this, this.state);
 							if(audioClip){
 								this.currentState = audioClip;
-								this[this.currentState]();
 								break;
 							}
 						}
@@ -315,40 +380,212 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 	 			}
 	 		},
 	 	    
-	 		"audio-mute-toggle": function(){
-	 			createjs.Sound.setMute(!createjs.Sound.getMute());
+	 		"toggle-mute": function(audioId){
+	 			var self = this;
+	 			
+	 			this.handleClip(audioId, function(clip){
+	 				if(clip){
+		 				clip.options.mute = !clip.options.mute;
+		 				self.setChannelSettings(clip);
+	 				}
+	 			});
 	 		},
 	 	    
-	 		"audio-stop": function(){
-	 			this.stopAudio();
+	 		"stop-audio": function(audioId){
+	 			if(!audioId){
+		 			this.stopAudio();
+	 			} else if(typeof audioId === 'string'){
+		 			this.stopAudio(audioId);
+	 			} else {
+		 			this.stopAudio(audioId.audioId || false, audioId.playthrough || false);
+	 			}
 	 		},
 	 	    
-	 		"audio-mute": function(){
-	 			createjs.Sound.setMute(true);
+	 		"mute-audio": function(audioId){
+	 			var self = this;
+	 			
+	 			this.handleClip(audioId, function(clip){
+	 				if(clip){
+		 				clip.options.mute = true;
+		 				self.setChannelSettings(clip);
+	 				}
+	 			});
 	 		},
 	 	    
-	 		"audio-unmute": function(){
-	 			createjs.Sound.setMute(false);
-	 		}
+	 		"unmute-audio": function(audioId){
+	 			var self = this;
+	 			
+	 			this.handleClip(audioId, function(clip){
+	 				if(clip){
+		 				clip.options.mute = false;
+		 				self.setChannelSettings(clip);
+	 				}
+	 			});
+	 		},
+	 	    
+	 		"pause-audio": function(audioId){
+	 			var self = this;
+	 			
+	 			this.handleClip(audioId, function(clip){
+	 				if(clip){
+		 				clip.options.paused = true;
+		 				self.setChannelSettings(clip);
+	 				}
+	 			});
+	 		},
+	 	    
+	 		"unpause-audio": function(audioId){
+	 			var self = this;
+	 			
+	 			this.handleClip(audioId, function(clip){
+	 				if(clip){
+		 				clip.options.paused = false;
+		 				self.setChannelSettings(clip);
+	 				}
+	 			});
+	 		},
+	 		
+	 		"set-volume": function(volume){
+	 			var self = this,
+	 			vol      = 0,
+	 			handler  = function(clip){
+	 				clip.options.volume = vol;
+	 				self.setChannelSettings(clip);
+	 			};
+	 			
+	 			if(typeof volume === 'number'){
+	 				vol = volume;
+		 			this.getAllClips(handler);
+	 			} else if(volume.volume){
+	 				vol = volume.volume;
+	 				this.handleClip(volume.soundId, handler);
+	 			}	 			
+	 		},
+
+	 		"audio-stop":        function(){console.warn(this.owner.type + " - audio component: The 'audio-stop' event has been deprecated. Use 'stop-audio' instead.");},
+	 		"audio-mute-toggle": function(){console.warn(this.owner.type + " - audio component: The 'audio-mute-toggle' event has been deprecated. Use 'toggle-mute' instead.");},
+	 		"audio-mute":        function(){console.warn(this.owner.type + " - audio component: The 'audio-mute' event has been deprecated. Use 'mute-audio' instead.");},
+	 		"audio-unmute":      function(){console.warn(this.owner.type + " - audio component: The 'audio-unmute' event has been deprecated. Use 'unmute-audio' instead.");},
+	 		"audio-pause":       function(){console.warn(this.owner.type + " - audio component: The 'audio-pause' event has been deprecated. Use 'pause-audio' instead.");},
+	 		"audio-unpause":     function(){console.warn(this.owner.type + " - audio component: The 'audio-unpause' event has been deprecated. Use 'unpause-audio' instead.");}
 		},
 		
 		methods: {
-			stopAudio: function(){
-	 			for (var i in this.activeAudioClips){
-	 				this.activeAudioClips[i].stop();
+			handleClip: function(audioId, handler){
+				if (typeof audioId === 'string') {
+					this.getClipById(audioId, handler);
+				} else {
+		 			this.getAllClips(handler);
+				}
+			},
+			
+			getClipById: function(id, onGet){
+				var i = 0,
+				clips = this.activeAudioClips;
+				
+				for (; i < clips.length; i++){
+					if(clips[i].soundId === id){
+						if (onGet) onGet(clips[i]);
+						return clips[i];
+					}
+				}
+				
+				if(onGet) onGet(null);
+
+				return null;
+			},
+			
+			getAllClips: function(onGet){
+				var i = 0,
+				clips = this.activeAudioClips;
+				
+				if (onGet) for (; i < clips.length; i++) onGet(clips[i]);
+
+				return clips;
+			},
+			
+			setChannelSettings: function(clip){
+				var channel = this.channelSettings,
+				pause       = (this.mixer.paused || channel.paused || clip.options.paused);
+				
+				clip.setMute(clip.options.mute || channel.mute);
+				clip.setPan((clip.options.pan + channel.pan) / 2);
+				clip.setVolume(clip.options.volume * channel.volume);
+				if(clip.paused !== pause){
+					if(pause){
+						clip.pause();
+					} else {
+						clip.resume();
+					}
+				} else if(!pause && clip.options.unplayed){
+					delete clip.options.unplayed;
+					clip.play(clip.options);
+				}
+			},
+			
+			stopAudio: function(audioId, playthrough){
+				var i = 0,
+				clips = this.activeAudioClips,
+				self  = this;
+				
+	 			if(audioId){
+		 			for (i = clips.length - 1; i >= 0; i--){
+		 				if(clips[i].soundId === audioId){
+		 					if(playthrough){
+		 						clips[i].addEventListener('loop', function(instance){
+		 							self.stopAudioInstance(instance.currentTarget);
+		 						});
+		 					} else {
+				 				clips[i].stop();
+				 				clips.splice(i, 1);
+			 					if(this.priorityTrack && (clips[i] === this.priorityTrack.audio)){
+			 						this.priorityTrack = null;
+			 					}
+		 					}
+		 				}
+		 			}
+	 			} else {
+		 			if(playthrough){
+			 			for (; i < clips.length; i++){
+	 						clips[i].addEventListener('loop', function(instance){
+	 							self.stopAudioInstance(instance.currentTarget);
+	 						});
+			 			}
+		 			} else {
+			 			for (; i < this.activeAudioClips.length; i++){
+			 				clips[i].stop();
+			 			}
+			 			clips.length = 0;
+ 						this.priorityTrack = null;
+		 			}
 	 			}
-	 			this.activeAudioClips.length = 0;
-	 			this.timedAudioClips.length = 0;
+			},
+			
+			stopAudioInstance: function(instance){
+				var i = 0,
+				clips = this.activeAudioClips;
+				
+	 			for (i = clips.length - 1; i >= 0; i--){
+	 				if(clips[i] === instance){
+		 				clips[i].stop();
+		 				clips.splice(i, 1);
+	 					if(this.priorityTrack && (clips[i] === this.priorityTrack.audio)){
+	 						this.priorityTrack = null;
+	 					}
+	 				}
+	 			}
 			},
 			
 			checkTimeEvents: function(audioClip, finished){
-				var currentTime = 0;
+				var events  = audioClip.sequenceEvents,
+				currentTime = 0;
 				
-				if(audioClip.sequenceEvents){
+				if(events && events.length){
 					currentTime = audioClip.getPosition();
-					while(audioClip.sequenceEvents.length && (finished || (audioClip.sequenceEvents[0].time <= currentTime))){
-						this.owner.trigger(audioClip.sequenceEvents[0].event, audioClip.sequenceEvents[0].message);
-						audioClip.sequenceEvents.splice(0,1);
+
+					while(events.length && (finished || (events[0].time <= currentTime))){
+						this.owner.trigger(events[0].event, events[0].message);
+						events.splice(0,1);
 					}
 				}
 			},
@@ -360,6 +597,11 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 				this.checkTimeEvents(audioClip, true);
 				
 				this.owner.triggerEvent('clip-complete');
+				
+				if(this.priorityTrack && (audioClip === this.priorityTrack.audio)){
+					next = this.priorityTrack.next;
+					this.priorityTrack = null;
+				}
 				
 				if(next && next.length){
 					if(typeof next === 'string'){
@@ -379,7 +621,7 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 			},
 			
 			removeClip: function(audioClip){
-				for (var i in this.activeAudioClips){
+				for (var i = 0; i < this.activeAudioClips.length; i++){
 					if (this.activeAudioClips[i] === audioClip){
 						this.activeAudioClips.splice(i,1);
 						break;
@@ -389,6 +631,14 @@ This component plays audio. Audio is played in one of two ways, by triggering sp
 			
 			destroy: function(){
 				this.stopAudio();
+				if(this.preventOverlaps){
+					for(var i in channels[this.channel]){
+						if(channels[this.channel][i] === this){
+							channels[this.channel].splice(i, 1);
+							break;
+						}
+					}
+				}
 			}
 		}
 	});

@@ -41,7 +41,7 @@ This component checks for collisions between entities which typically have eithe
       // This component has no customizable properties.
     }
     
-Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collision-data-container.js"]
+Requires: ["../collision-shape.js", "../aabb.js", "../vector.js", "../collision-data-container.js"]
 */
 (function(){
 	//set here to make them reusable objects
@@ -148,7 +148,9 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 		
 		events:{
 			"child-entity-added": function(entity){
-				this.addCollisionEntity(entity);
+				if(!entity.collideOff){
+					this.addCollisionEntity(entity);
+				}
 			},
 			
 			"add-collision-entity": function(entity){
@@ -303,7 +305,8 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 						
 						aabbLogic.setAll(x, y, width, height);
 						
-						if(this.updateLiveList || !aabbCollision.contains(aabbLogic)){ //if the camera has not moved beyond the original buffer, we do not continue these calculations
+						// Removing this line since it allows logic to run without collision turned on. Not certain why, but can turn this back on and trace down the issue if optimization is necessary. - DDD 12/31/2014
+						//if(this.updateLiveList || !aabbCollision.contains(aabbLogic)){ //if the camera has not moved beyond the original buffer, we do not continue these calculations
 							this.updateLiveList = false;
 	
 							all = this.allEntitiesLive;
@@ -364,7 +367,7 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 									}
 								}
 							}
-						}
+						//}
 					}
 				};
 			})(),
@@ -385,14 +388,14 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 			
 			resolveNonCollisions: function (resp) {
 				var entity = null,
-				xy         = xyPair;
-
-				xy.relative = false;
+				xy         = {
+					position: new platformer.Vector(),
+					relative: false
+				};
 				
 				for (var x = this.nonColliders.length - 1; x > -1; x--) {
 					entity = this.nonColliders[x];
-					xy.x = entity.x;
-					xy.y = entity.y;
+					xy.position.set(entity.position);
 					entity.trigger('relocate-entity', xy);
 				}
 			},
@@ -423,13 +426,14 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 				};
 
 				return function (){
-					var entities = this.groupsLive;
+					var entities = this.groupsLive,
+					fmi = new platformer.Vector();
 					
 					for (var x = entities.length - 1; x > -1; x--){
 						if(entities[x].collisionGroup.getSize() > 1){
 							entityCollisionDataContainer.reset();
-							clearXYPair(xyPair);
-							xyPair = this.checkSolidEntityCollision(entities[x], entities[x].collisionGroup, entityCollisionDataContainer, xyPair);
+							fmi.set(0,0,0);
+							fmi = this.checkSolidEntityCollision(entities[x], entities[x].collisionGroup, entityCollisionDataContainer, fmi);
 							
 							for (var i = 0; i < entityCollisionDataContainer.xCount; i++)
 							{
@@ -474,12 +478,13 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 
 				return function (){
 					var messageData = null,
-					entities = this.solidEntitiesLive;
+					entities = this.solidEntitiesLive,
+					fmi = new platformer.Vector();
 					
 					for (var x = entities.length - 1; x > -1; x--){
 						entityCollisionDataContainer.reset();
-						clearXYPair(xyPair);
-						xyPair = this.checkSolidEntityCollision(entities[x], entities[x], entityCollisionDataContainer, xyPair);
+						fmi.set(0,0,0);
+						fmi = this.checkSolidEntityCollision(entities[x], entities[x], entityCollisionDataContainer, fmi);
 						
 						for (var i = 0; i < entityCollisionDataContainer.xCount; i++)
 						{
@@ -514,8 +519,7 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 					ignoredEntities = entityOrGroup.getSolidEntities();
 				}
 				
-				finalMovementInfo.x = ent.x;
-				finalMovementInfo.y = ent.y;
+				finalMovementInfo.set(ent.position);
 
 				if (entityDeltaX || entityDeltaY) {
 					
@@ -540,18 +544,17 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 					for(step = 0; step < steps; step++){
 						entityOrGroup.prepareCollision(ent.previousX + dX, ent.previousY + dY);
 
-						finalMovementInfo.x = ent.x;
-						finalMovementInfo.y = ent.y;
+						finalMovementInfo.set(ent.position);
 						
 						finalMovementInfo = this.processCollisionStep(ent, entityOrGroup, ignoredEntities, collisionDataCollection, finalMovementInfo, dX, dY, collisionTypes);
 						
 						
 						if((finalMovementInfo.x === ent.previousX) && (finalMovementInfo.y === ent.previousY)){
-							entityOrGroup.relocateEntity(finalMovementInfo.x, finalMovementInfo.y, collisionDataCollection);
+							entityOrGroup.relocateEntity(finalMovementInfo, collisionDataCollection);
 							//No more movement so we bail!
 							break;
 						} else {
-							entityOrGroup.relocateEntity(finalMovementInfo.x, finalMovementInfo.y, collisionDataCollection);
+							entityOrGroup.relocateEntity(finalMovementInfo, collisionDataCollection);
 						}
 					}
 				}
@@ -594,7 +597,7 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 					var terrain = this.getWorldTerrain(),
 					solidCollisions = entityOrGroup.getSolidCollisions();
 					
-					if(!entityOrGroup.jumpThrough || (entityDeltaY >= 0)){ //TODO: Need to extend jumpthrough to handle different directions and forward motion - DDD
+//					if(!entityOrGroup.jumpThrough || (entityDeltaY >= 0)){ //TODO: Need to extend jumpthrough to handle different directions and forward motion - DDD
 	
 						for(var i = 0; i < collisionTypes.length; i++){
 							//Sweep the full movement of each collision type
@@ -645,7 +648,7 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 							finalMovementInfo = this.resolveCollisionPosition(ent, entityOrGroup, finalMovementInfo, potentialCollidingShapes, collisionDataCollection, collisionTypes, entityDeltaX, entityDeltaY);
 						}
 	
-					}
+//					}
 					
 					return finalMovementInfo;
 				};
@@ -754,7 +757,7 @@ Requires: ["../collision-shape.js", "../aabb.js", "../vector2D.js", "../collisio
 					collisionData.vector = vector.copy();
 				},
 				findAxisCollisionPosition = (function(){
-					var v = new platformer.Vector2D(),
+					var v = new platformer.Vector(),
 					returnInfo = {
 						position: 0,
 						contactVector: v

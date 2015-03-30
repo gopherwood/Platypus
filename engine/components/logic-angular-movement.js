@@ -93,6 +93,9 @@ This component changes the (x, y) position of an object according to its current
 			},
 			"stop": function(){
 				this.moving = false;
+			},
+			"set-max-velocity": function(newMaxV){
+				this.maxV = newMaxV;
 			}
 		}
 	});
